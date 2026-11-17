@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @cricket/shared build && pnpm --filter @cricket/engine build && cd apps/api && pnpm exec prisma generate && pnpm exec tsup --config tsup.vercel.config.ts",
-  "outputDirectory": ".",
+  "buildCommand": "cd ../.. && pnpm --filter @cricket/shared build && pnpm --filter @cricket/engine build && cd apps/api && pnpm exec prisma generate",
+  "outputDirectory": "public",
   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }

@@ -11,4 +11,3 @@ coverage
 
 # Vercel
 .vercel
-apps/api/api/index.js*
