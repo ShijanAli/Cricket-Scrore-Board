@@ -8,3 +8,7 @@ coverage
 .expo
 .DS_Store
 .env.prod
+
+# Vercel
+.vercel
+apps/api/api/index.js*
