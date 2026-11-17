@@ -17,6 +17,14 @@ export function createApp(): Express {
   // A batch of 200 events is well under 1 MB.
   app.use(express.json({ limit: '1mb' }));
 
+  app.get('/', (_req, res) => {
+    res.json({
+      status: 'ok',
+      version: process.env.npm_package_version,
+      message: 'Welcome to the Cricket API!',
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
