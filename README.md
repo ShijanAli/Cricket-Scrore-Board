@@ -9,7 +9,7 @@ Mobile app (Expo React Native), Express + Prisma + PostgreSQL API, Socket.io for
 apps/
   api/        Express + Prisma + Socket.io   (done: auth, teams, tournaments, series, matches, scoring, live)
   mobile/     Expo React Native              (next)
-  web/        Next.js public live page       (later)
+  web/        React + Vite web app (viewer, dashboard, scoring)
 packages/
   shared/     zod schemas, enums, types, socket event contracts   (single source of truth)
   cricket-engine/  pure TypeScript cricket logic: scoring, result, NRR, standings, fixtures, scheduler
