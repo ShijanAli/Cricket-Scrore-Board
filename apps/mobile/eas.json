@@ -8,14 +8,14 @@
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://CHANGE-ME.example.com"
+        "EXPO_PUBLIC_API_URL": "https://cricket-scrore-board.vercel.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": { "buildType": "app-bundle" },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://CHANGE-ME.example.com"
+        "EXPO_PUBLIC_API_URL": "https://cricket-scrore-board.vercel.app"
       }
     }
   },
