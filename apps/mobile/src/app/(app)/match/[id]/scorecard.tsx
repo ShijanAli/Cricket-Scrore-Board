@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Scorecard } from '@/cricket/Scorecard';
-import { playerNames, teamName } from '@/cricket/match-utils';
+import { playerNames, teamName } from '@cricket/client-core';
 import { useMatch } from '@/hooks/queries';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 import { QueryBoundary, Screen, Text } from '@/ui';

@@ -6,9 +6,9 @@ import {
   type InningsState,
   type MatchRules,
 } from '@cricket/shared';
-import { ApiError } from '@/api/client';
-import type { EventsResult, IngestResult } from '@/api/types';
-import { uuid } from '@/lib/uuid';
+import { ApiError } from '../api/client';
+import type { EventsResult, IngestResult } from '../api/types';
+import { uuid } from '../lib/uuid';
 import { deliveryFromIntent, type Intent, type NewEvent } from './intents';
 import { mergeLogs, stripSeq } from './merge';
 import type { LocalEventStore, StoredEvent } from './store';

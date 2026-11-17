@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { AuthResult, User } from '@/api/types';
+import type { AuthResult, User } from '@cricket/client-core';
 import { api, onSessionExpired } from '@/lib/api';
 import { secureTokenStore, userStore } from '@/lib/secure-session';
 

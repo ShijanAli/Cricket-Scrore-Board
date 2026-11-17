@@ -1,4 +1,4 @@
-import type { FixtureSource, MatchSummary } from '@/api/types';
+import type { FixtureSource, MatchSummary } from '../api/types';
 import { teamName } from './match-utils';
 
 const ordinal = (n: number): string => {

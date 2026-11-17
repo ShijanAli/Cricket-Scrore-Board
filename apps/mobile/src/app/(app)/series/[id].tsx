@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { SeriesDetail } from '@/api/types';
+import type { SeriesDetail } from '@cricket/client-core';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { useSeries } from '@/hooks/queries';
 import { Badge, Card, QueryBoundary, Screen, Text, space } from '@/ui';

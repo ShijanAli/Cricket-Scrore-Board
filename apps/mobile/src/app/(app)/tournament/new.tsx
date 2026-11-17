@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
 import { useCreateTournament } from '@/hooks/queries';
-import { buildTournamentInput, defaultDraft, type TournamentDraft } from '@/features/tournament-form';
+import { buildTournamentInput, defaultDraft, type TournamentDraft } from '@cricket/client-core';
 import { errorMessage } from '@/lib/query';
 import { Button, Chip, ErrorBanner, NumberStepper, Screen, Segmented, Text, TextField, space } from '@/ui';
 

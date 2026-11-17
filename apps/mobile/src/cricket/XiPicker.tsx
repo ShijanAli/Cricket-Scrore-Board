@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import type { SquadMember, Team } from '@/api/types';
+import type { SquadMember, Team } from '@cricket/client-core';
 import { Button, Card, Chip, TeamBadge, Text, space } from '@/ui';
 
 export interface XiPickerProps {

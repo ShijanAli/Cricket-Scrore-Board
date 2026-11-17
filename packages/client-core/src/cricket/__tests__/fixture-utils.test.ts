@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MatchSummary } from '@/api/types';
+import type { MatchSummary } from '../../api/types';
 import { groupByStage, sideLabel, stageLabel } from '../fixture-utils';
 
 const m = (over: Partial<MatchSummary>): MatchSummary =>

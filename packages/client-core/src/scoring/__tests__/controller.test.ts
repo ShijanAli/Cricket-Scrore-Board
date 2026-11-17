@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { EngineError } from '@cricket/engine';
 import type { BallEvent, InningsSetup, MatchRules } from '@cricket/shared';
-import { ApiError } from '@/api/client';
-import type { EventsResult, IngestResult } from '@/api/types';
+import { ApiError } from '../../api/client';
+import type { EventsResult, IngestResult } from '../../api/types';
 import { ScoringController, SyncBlockedError, type ScoringApi } from '../controller';
 import { MemoryEventStore } from '../memory-store';
 import { mergeLogs } from '../merge';

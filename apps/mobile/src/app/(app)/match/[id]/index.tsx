@@ -1,8 +1,7 @@
 import { View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { MatchDetail } from '@/api/types';
+import { isFinished, isLive, nextStep, statusLabel, statusTone, teamName, type MatchDetail } from '@cricket/client-core';
 import { ScoreHeader } from '@/cricket/ScoreHeader';
-import { isFinished, isLive, nextStep, statusLabel, statusTone, teamName } from '@/cricket/match-utils';
 import { useMatch } from '@/hooks/queries';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 import { Badge, Button, Card, QueryBoundary, Screen, Text, space } from '@/ui';

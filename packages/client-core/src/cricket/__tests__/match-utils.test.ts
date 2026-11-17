@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MatchDetail } from '@/api/types';
+import type { MatchDetail } from '../../api/types';
 import { inningsSides, nextStep, playerNames } from '../match-utils';
 
 const base = { teamAId: 'A', teamBId: 'B', tossWinnerId: null, tossDecision: null } as const;

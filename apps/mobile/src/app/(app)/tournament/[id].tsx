@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { TournamentDetail } from '@/api/types';
+import { groupByStage, type TournamentDetail } from '@cricket/client-core';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { StandingsTable } from '@/cricket/StandingsTable';
-import { groupByStage } from '@/cricket/fixture-utils';
 import {
   useAddTournamentScorer,
   useAddTournamentTeam,

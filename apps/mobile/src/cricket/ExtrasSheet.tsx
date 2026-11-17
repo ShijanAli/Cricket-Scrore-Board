@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BottomSheet, Button, Segmented, Text } from '@/ui';
-import type { Intent } from '@/features/scoring/intents';
+import type { Intent } from '@cricket/client-core';
 import type { ExtraKind } from './RunPad';
 
 const COPY: Record<ExtraKind, { title: string; hint: string; min: number }> = {

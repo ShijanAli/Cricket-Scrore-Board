@@ -2,17 +2,15 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { oversFromBalls } from '@cricket/engine';
-import type { MatchDetail } from '@/api/types';
+import { playerNames, teamName, xiOf, type MatchDetail, type Intent } from '@cricket/client-core';
 import { ExtrasSheet } from '@/cricket/ExtrasSheet';
 import { OverStrip } from '@/cricket/OverStrip';
 import { PlayerPicker, type PickablePlayer } from '@/cricket/PlayerPicker';
 import { RunPad, type ExtraKind } from '@/cricket/RunPad';
 import { ScoreHeader } from '@/cricket/ScoreHeader';
 import { WicketSheet } from '@/cricket/WicketSheet';
-import { playerNames, teamName, xiOf } from '@/cricket/match-utils';
 import { errorMessage } from '@/lib/query';
 import { Badge, Button, Card, Screen, Text, colors, space } from '@/ui';
-import type { Intent } from './intents';
 import { useScoring } from './useScoring';
 
 export function ScoringView({ match, inningsNo }: { match: MatchDetail; inningsNo: number }) {

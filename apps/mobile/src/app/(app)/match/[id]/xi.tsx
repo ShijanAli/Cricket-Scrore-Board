@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueries } from '@tanstack/react-query';
-import type { MatchDetail } from '@/api/types';
+import { xiOf, type MatchDetail } from '@cricket/client-core';
 import { XiPicker } from '@/cricket/XiPicker';
-import { xiOf } from '@/cricket/match-utils';
 import { useMatch, useSetPlayingXI } from '@/hooks/queries';
 import { api } from '@/lib/api';
 import { errorMessage, keys } from '@/lib/query';

@@ -1,5 +1,5 @@
 import type { MatchStatus } from '@cricket/shared';
-import type { MatchDetail, MatchPlayerRow, MatchSummary } from '@/api/types';
+import type { MatchDetail, MatchPlayerRow, MatchSummary } from '../api/types';
 
 type TossInfo = Pick<MatchSummary, 'teamAId' | 'teamBId' | 'tossWinnerId' | 'tossDecision'>;
 

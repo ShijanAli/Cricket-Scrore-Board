@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { formatNrr } from '@cricket/engine';
-import type { StandingRowDto } from '@/api/types';
+import type { StandingRowDto } from '@cricket/client-core';
 import { Card, Text, colors, space } from '@/ui';
 
 const C = ({ children, head, wide, bold }: { children: React.ReactNode; head?: boolean; wide?: boolean; bold?: boolean }) => (

@@ -10,10 +10,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "doctor": "expo-doctor",
-    "eas-build-post-install": "pnpm --filter @cricket/shared build && pnpm --filter @cricket/engine build",
+    "eas-build-post-install": "pnpm --filter @cricket/shared build && pnpm --filter @cricket/engine build && pnpm --filter @cricket/client-core build",
     "build:apk": "eas build -p android --profile preview"
   },
   "dependencies": {
+    "@cricket/client-core": "workspace:*",
     "@cricket/engine": "workspace:*",
     "@cricket/shared": "workspace:*",
     "@expo/vector-icons": "^15.1.1",

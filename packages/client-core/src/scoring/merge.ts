@@ -1,5 +1,5 @@
 import type { BallEvent } from '@cricket/shared';
-import type { StoredServerEvent } from '@/api/types';
+import type { StoredServerEvent } from '../api/types';
 import type { StoredEvent } from './store';
 
 /** The server sends `seq` with every event. The engine and the outbox do not need it. */
