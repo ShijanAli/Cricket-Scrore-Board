@@ -1,0 +1,542 @@
+// Cricket Score App: PostgreSQL schema
+//
+// Design notes
+// - UUID primary keys everywhere. BallEvent ids are generated on the phone (offline-first)
+//   so the same event synced twice is a no-op (primary key conflict).
+// - BallEvent is an append-only log. Undo is another event, never a delete or update.
+//   Innings.snapshot is a cached projection of that log (rebuilt with @cricket/engine).
+// - Rules, points and scheduler config are JSON validated by @cricket/shared (zod) at the API
+//   boundary. A Match stores its own copy of the rules, so editing a tournament later
+//   never changes a match that already started.
+// - Local date/time (YYYY-MM-DD + HH:mm) is stored as given, to avoid timezone bugs for
+//   fixtures that are scheduled in the venue's local time.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums (values mirror @cricket/shared constants)
+// ---------------------------------------------------------------------------
+
+enum MatchType {
+  single
+  tournament
+  series
+}
+
+enum MatchStatus {
+  scheduled
+  toss
+  live
+  innings_break
+  completed
+  abandoned
+  no_result
+  walkover
+}
+
+enum ResultType {
+  won_by_runs
+  won_by_wickets
+  tie
+  no_result
+  abandoned
+  walkover
+}
+
+enum TossDecision {
+  bat
+  bowl
+}
+
+enum InningsStatus {
+  inProgress
+  completed
+}
+
+enum BallEventType {
+  delivery
+  batterIn
+  bowlerSelected
+  strikeSwap
+  retire
+  undo
+}
+
+enum PlayerRole {
+  batter
+  bowler
+  all_rounder
+  wicketkeeper
+}
+
+enum MemberRole {
+  organiser
+  scorer
+  captain
+}
+
+enum TournamentFormat {
+  league
+  league_final
+  league_semi_final
+  knockout
+}
+
+enum TournamentStatus {
+  draft
+  live
+  completed
+}
+
+enum ScheduleMode {
+  auto
+  manual
+}
+
+enum SeriesStatus {
+  live
+  completed
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(60)
+  email        String   @unique @db.VarChar(254)
+  passwordHash String
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  refreshTokens  RefreshToken[]
+  ownedTeams     Team[]
+  ownedPlayers   Player[]           @relation("PlayerCreator")
+  linkedPlayer   Player?            @relation("PlayerAccount")
+  tournaments    Tournament[]       @relation("TournamentOwner")
+  memberships    TournamentMember[]
+  series         Series[]
+  matches        Match[]            @relation("MatchOwner")
+  activeScorerOf Match[]            @relation("MatchActiveScorer")
+  events         BallEvent[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  /**
+   * SHA-256 of the token. The raw token is never stored.
+   */
+  tokenHash String    @unique
+  expiresAt DateTime  @db.Timestamptz
+  revokedAt DateTime? @db.Timestamptz
+  createdAt DateTime  @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Teams and players
+// ---------------------------------------------------------------------------
+
+model Team {
+  id            String   @id @default(uuid()) @db.Uuid
+  ownerId       String   @db.Uuid
+  name          String   @db.VarChar(40)
+  shortName     String   @db.VarChar(4)
+  color         String   @default("#0E7C4A") @db.VarChar(7)
+  logoUrl       String?
+  contactNumber String?  @db.VarChar(20)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  roster          TeamPlayer[]
+  tournamentTeams TournamentTeam[]
+  matchesAsA      Match[]          @relation("MatchTeamA")
+  matchesAsB      Match[]          @relation("MatchTeamB")
+  tossWins        Match[]          @relation("MatchTossWinner")
+  wins            Match[]          @relation("MatchWinner")
+  matchPlayers    MatchPlayer[]
+  battingInnings  Innings[]        @relation("InningsBattingTeam")
+  bowlingInnings  Innings[]        @relation("InningsBowlingTeam")
+  seriesAsA       Series[]         @relation("SeriesTeamA")
+  seriesAsB       Series[]         @relation("SeriesTeamB")
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+  @@map("teams")
+}
+
+model Player {
+  id           String     @id @default(uuid()) @db.Uuid
+  /**
+   * Who created this player record (organiser/captain).
+   */
+  createdById  String     @db.Uuid
+  /**
+   * Set when the player has claimed the record with their own account.
+   */
+  userId       String?    @unique @db.Uuid
+  name         String     @db.VarChar(60)
+  phone        String?    @db.VarChar(20)
+  role         PlayerRole @default(batter)
+  jerseyNumber Int?
+  createdAt    DateTime   @default(now()) @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @db.Timestamptz
+
+  createdBy    User          @relation("PlayerCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  user         User?         @relation("PlayerAccount", fields: [userId], references: [id], onDelete: SetNull)
+  teams        TeamPlayer[]
+  matchPlayers MatchPlayer[]
+
+  @@index([createdById])
+  @@index([phone])
+  @@map("players")
+}
+
+/**
+ * A team's roster (its squad). Playing XI for a match is chosen from here.
+ */
+model TeamPlayer {
+  teamId         String   @db.Uuid
+  playerId       String   @db.Uuid
+  isCaptain      Boolean  @default(false)
+  isViceCaptain  Boolean  @default(false)
+  isWicketkeeper Boolean  @default(false)
+  jerseyNumber   Int?
+  createdAt      DateTime @default(now()) @db.Timestamptz
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+
+  @@id([teamId, playerId])
+  @@index([playerId])
+  @@map("team_players")
+}
+
+// ---------------------------------------------------------------------------
+// Tournaments and series
+// ---------------------------------------------------------------------------
+
+model Tournament {
+  id               String           @id @default(uuid()) @db.Uuid
+  ownerId          String           @db.Uuid
+  name             String           @db.VarChar(80)
+  format           TournamentFormat
+  teamCount        Int
+  doubleRoundRobin Boolean          @default(false)
+  scheduleMode     ScheduleMode     @default(auto)
+  status           TournamentStatus @default(draft)
+  /**
+   * MatchRules (validated by matchRulesSchema). Copied onto each Match when it is created.
+   */
+  rules            Json
+  /**
+   * PointsConfig.
+   */
+  points           Json
+  /**
+   * Ordered tiebreakers, e.g. ["points","wins","nrr"].
+   */
+  tiebreakers      String[]
+  /**
+   * SchedulerConfig, only for scheduleMode = auto.
+   */
+  schedulerConfig  Json?
+  createdAt        DateTime         @default(now()) @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @db.Timestamptz
+
+  owner   User               @relation("TournamentOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members TournamentMember[]
+  teams   TournamentTeam[]
+  matches Match[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("tournaments")
+}
+
+/**
+ * Per-tournament roles: organiser, scorer, captain.
+ */
+model TournamentMember {
+  tournamentId String     @db.Uuid
+  userId       String     @db.Uuid
+  role         MemberRole
+  createdAt    DateTime   @default(now()) @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, userId, role])
+  @@index([userId])
+  @@map("tournament_members")
+}
+
+model TournamentTeam {
+  id           String   @id @default(uuid()) @db.Uuid
+  tournamentId String   @db.Uuid
+  teamId       String   @db.Uuid
+  /**
+   * Seed, used for knockout brackets. 1 = top seed.
+   */
+  seed         Int?
+  entryFeePaid Boolean  @default(false)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  @@unique([tournamentId, teamId])
+  @@unique([tournamentId, seed])
+  @@index([teamId])
+  @@map("tournament_teams")
+}
+
+model Series {
+  id         String       @id @default(uuid()) @db.Uuid
+  ownerId    String       @db.Uuid
+  name       String       @db.VarChar(80)
+  teamAId    String       @db.Uuid
+  teamBId    String       @db.Uuid
+  /**
+   * Odd: 3, 5, 7...
+   */
+  matchCount Int
+  rules      Json
+  status     SeriesStatus @default(live)
+  createdAt  DateTime     @default(now()) @db.Timestamptz
+  updatedAt  DateTime     @updatedAt @db.Timestamptz
+
+  owner   User    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  teamA   Team    @relation("SeriesTeamA", fields: [teamAId], references: [id], onDelete: Restrict)
+  teamB   Team    @relation("SeriesTeamB", fields: [teamBId], references: [id], onDelete: Restrict)
+  matches Match[]
+
+  @@index([ownerId])
+  @@map("series")
+}
+
+// ---------------------------------------------------------------------------
+// Matches
+// ---------------------------------------------------------------------------
+
+model Match {
+  id           String    @id @default(uuid()) @db.Uuid
+  type         MatchType
+  ownerId      String    @db.Uuid
+  tournamentId String?   @db.Uuid
+  seriesId     String?   @db.Uuid
+
+  /**
+   * Fixture position inside a tournament or series (1-based).
+   */
+  matchNo   Int?
+  /**
+   * league | quarter_final | semi_final | final | round_of_N
+   */
+  stage     String? @db.VarChar(20)
+  round     Int?
+  /**
+   * TBD playoff slots: where each team will come from (FixtureSource JSON).
+   */
+  sourceA   Json?
+  sourceB   Json?
+  /**
+   * Fixture matchNos that must finish before this one.
+   */
+  dependsOn Int[]
+
+  /**
+   * Null while a playoff slot is still undecided.
+   */
+  teamAId String? @db.Uuid
+  teamBId String? @db.Uuid
+
+  status        MatchStatus @default(scheduled)
+  /**
+   * Local venue date and time as scheduled (YYYY-MM-DD, HH:mm).
+   */
+  scheduledDate DateTime?   @db.Date
+  scheduledTime String?     @db.VarChar(5)
+  ground        String?     @db.VarChar(80)
+
+  /**
+   * Frozen copy of MatchRules for this match.
+   */
+  rules Json
+
+  tossWinnerId String?       @db.Uuid
+  tossDecision TossDecision?
+
+  currentInningsNo Int @default(0)
+
+  resultType   ResultType?
+  winnerId     String?     @db.Uuid
+  resultMargin Int?
+  /**
+   * e.g. "Team A won by 12 runs"
+   */
+  resultText   String?
+
+  /**
+   * Only one scorer at a time.
+   */
+  activeScorerId String?   @db.Uuid
+  scorerLockedAt DateTime? @db.Timestamptz
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  owner        User        @relation("MatchOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  series       Series?     @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  teamA        Team?       @relation("MatchTeamA", fields: [teamAId], references: [id], onDelete: Restrict)
+  teamB        Team?       @relation("MatchTeamB", fields: [teamBId], references: [id], onDelete: Restrict)
+  tossWinner   Team?       @relation("MatchTossWinner", fields: [tossWinnerId], references: [id], onDelete: Restrict)
+  winner       Team?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: Restrict)
+  activeScorer User?       @relation("MatchActiveScorer", fields: [activeScorerId], references: [id], onDelete: SetNull)
+
+  players MatchPlayer[]
+  innings Innings[]
+
+  @@unique([tournamentId, matchNo])
+  @@unique([seriesId, matchNo])
+  @@index([tournamentId, status])
+  @@index([tournamentId, scheduledDate, scheduledTime])
+  @@index([ownerId, createdAt])
+  @@index([status])
+  @@map("matches")
+}
+
+/**
+ * Playing XI for a match.
+ */
+model MatchPlayer {
+  matchId         String @db.Uuid
+  playerId        String @db.Uuid
+  teamId          String @db.Uuid
+  /**
+   * Order in the XI (1-based), optional.
+   */
+  battingPosition Int?
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Restrict)
+
+  @@id([matchId, playerId])
+  @@index([matchId, teamId])
+  @@index([playerId])
+  @@map("match_players")
+}
+
+// ---------------------------------------------------------------------------
+// Scoring
+// ---------------------------------------------------------------------------
+
+model Innings {
+  id            String        @id @default(uuid()) @db.Uuid
+  matchId       String        @db.Uuid
+  /**
+   * 1 or 2 (3 and 4 reserved for super overs).
+   */
+  inningsNo     Int
+  battingTeamId String        @db.Uuid
+  bowlingTeamId String        @db.Uuid
+  /**
+   * Opening setup (InningsSetup), needed to replay the event log.
+   */
+  strikerId     String        @db.Uuid
+  nonStrikerId  String        @db.Uuid
+  bowlerId      String        @db.Uuid
+  /**
+   * Runs to win, for the chasing innings.
+   */
+  target        Int?
+  status        InningsStatus @default(inProgress)
+  /**
+   * Last assigned BallEvent.seq. Incremented atomically while ingesting.
+   */
+  lastSeq       Int           @default(0)
+  /**
+   * Cached InningsState projected from the event log (@cricket/engine).
+   */
+  snapshot      Json?
+  completedAt   DateTime?     @db.Timestamptz
+  createdAt     DateTime      @default(now()) @db.Timestamptz
+  updatedAt     DateTime      @updatedAt @db.Timestamptz
+
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  battingTeam Team        @relation("InningsBattingTeam", fields: [battingTeamId], references: [id], onDelete: Restrict)
+  bowlingTeam Team        @relation("InningsBowlingTeam", fields: [bowlingTeamId], references: [id], onDelete: Restrict)
+  events      BallEvent[]
+
+  @@unique([matchId, inningsNo])
+  @@map("innings")
+}
+
+/**
+ * Append-only event log. `id` is a client-generated UUID, so syncing the same event twice
+ * is harmless. `seq` is the server order within an innings.
+ */
+model BallEvent {
+  id              String        @id @db.Uuid
+  inningsId       String        @db.Uuid
+  seq             Int
+  type            BallEventType
+  /**
+   * The validated event body (@cricket/shared ballEventSchema).
+   */
+  payload         Json
+  createdById     String        @db.Uuid
+  /**
+   * When the scorer tapped it (phone clock).
+   */
+  clientCreatedAt DateTime?     @db.Timestamptz
+  createdAt       DateTime      @default(now()) @db.Timestamptz
+
+  innings   Innings @relation(fields: [inningsId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([inningsId, seq])
+  @@index([createdById])
+  @@map("ball_events")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  action     String   @db.VarChar(60)
+  entityType String   @db.VarChar(40)
+  entityId   String   @db.Uuid
+  meta       Json?
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

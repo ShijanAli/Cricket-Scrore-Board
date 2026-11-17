@@ -1,0 +1,6 @@
+# HTTPS certificate is issued and renewed automatically for {$DOMAIN}.
+# Caddy proxies WebSockets (Socket.io) with no extra setting.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy api:4000
+}
