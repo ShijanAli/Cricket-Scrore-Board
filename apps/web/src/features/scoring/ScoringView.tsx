@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { oversFromBalls } from '@cricket/engine';
 import { playerNames, teamName, xiOf, type Intent, type MatchDetail } from '@cricket/client-core';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { CelebrationOverlay } from '@/components/cricket/CelebrationOverlay';
 import { ExtrasDialog } from '@/components/cricket/ExtrasDialog';
 import { OverStrip } from '@/components/cricket/OverStrip';
 import { PlayerPickerDialog } from '@/components/cricket/PlayerPickerDialog';
@@ -21,6 +22,7 @@ export function ScoringView({ match, inningsNo }: { match: MatchDetail; inningsN
   const { controller, snapshot, lock } = useScoring(match, inningsNo);
   const { state } = snapshot;
   const nameOf = playerNames(match.players);
+  const liveInnings = useMemo(() => [{ inningsNo, snapshot: state }], [inningsNo, state]);
   const [extra, setExtra] = useState<ExtraKind | null>(null);
   const [wicketOpen, setWicketOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
@@ -119,6 +121,7 @@ export function ScoringView({ match, inningsNo }: { match: MatchDetail; inningsN
         )}
       </div>
 
+      <CelebrationOverlay match={match} innings={liveInnings} />
       <ExtrasDialog kind={extra} onClose={() => setExtra(null)} onConfirm={score} />
       <WicketDialog
         open={wicketOpen}

@@ -23,6 +23,7 @@ import type {
   MatchSummary,
   Page,
   Player,
+  SeriesAwards,
   SeriesDetail,
   SeriesListItem,
   StandingRowDto,
@@ -73,12 +74,14 @@ export function createApi(c: ApiClient) {
         c.post<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`).then((r) => r.fixtures),
       fixtures: (id: string) =>
         c.get<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`, { auth: false }).then((r) => r.fixtures),
+      awards: (id: string) => c.get<{ awards: SeriesAwards }>(`/tournaments/${id}/awards`, { auth: false }).then((r) => r.awards),
       standings: (id: string) =>
         c.get<{ standings: StandingRowDto[] }>(`/tournaments/${id}/standings`, { auth: false }).then((r) => r.standings),
     },
     series: {
       list: () => c.get<{ series: SeriesListItem[] }>('/series').then((r) => r.series),
       get: (id: string) => c.get<{ series: SeriesDetail }>(`/series/${id}`, { auth: false }).then((r) => r.series),
+      awards: (id: string) => c.get<{ awards: SeriesAwards }>(`/series/${id}/awards`, { auth: false }).then((r) => r.awards),
       create: (input: CreateSeriesInput) => c.post<{ series: { id: string } }>('/series', input).then((r) => r.series),
     },
     matches: {

@@ -1,3 +1,5 @@
+import { CelebrationOverlay } from '@/components/cricket/CelebrationOverlay';
+import { MatchResultCard } from '@/components/cricket/MatchResultCard';
 import { isFinished, isLive, nextStep, teamName, type MatchDetail } from '@cricket/client-core';
 import { Link, useParams } from 'react-router-dom';
 import { ScoreHeader } from '@/components/cricket/ScoreHeader';
@@ -23,18 +25,13 @@ function Hub({ match, connected }: { match: MatchDetail; connected: boolean }) {
   const go = (s: Parameters<typeof paths.app.matchStep>[1]) => paths.app.matchStep(match.id, s);
   return (
     <div className="space-y-4">
+      {live ? <CelebrationOverlay match={match} /> : null}
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge status={match.status} />
         {live ? <Badge variant={connected ? 'success' : 'secondary'}>{connected ? 'Real-time' : 'Updating every few seconds'}</Badge> : null}
       </div>
 
-      {match.resultText ? (
-        <Card className="bg-primary/10">
-          <CardContent>
-            <p className="text-lg font-semibold">{match.resultText}</p>
-          </CardContent>
-        </Card>
-      ) : null}
+      <MatchResultCard match={match} />
 
       <div className="grid gap-3 md:grid-cols-2">
         {[...match.innings]

@@ -1,7 +1,10 @@
 import { View } from 'react-native';
+import { useMemo } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { isFinished, isLive, nextStep, statusLabel, statusTone, teamName, type MatchDetail } from '@cricket/client-core';
+import { MatchResultCard } from '@/cricket/MatchResultCard';
 import { ScoreHeader } from '@/cricket/ScoreHeader';
+import { useCelebrations } from '@/cricket/useCelebrations';
 import { useMatch } from '@/hooks/queries';
 import { useLiveMatch } from '@/hooks/useLiveMatch';
 import { Badge, Button, Card, QueryBoundary, Screen, Text, space } from '@/ui';
@@ -19,6 +22,11 @@ function Hub({ match }: { match: MatchDetail }) {
   const step = nextStep(match);
   const go = (path: string) => router.push(`/match/${match.id}/${path}`);
   const status = live.status ?? match.status;
+  const source = useMemo(
+    () => match.innings.map((i) => ({ inningsNo: i.inningsNo, snapshot: live.innings[i.inningsNo] ?? i.snapshot })),
+    [match.innings, live.innings],
+  );
+  useCelebrations(match, source);
 
   return (
     <>
@@ -28,11 +36,7 @@ function Hub({ match }: { match: MatchDetail }) {
         {isLive(status) ? <Badge label={live.connected ? 'Real-time' : 'Connecting…'} tone={live.connected ? 'success' : 'neutral'} /> : null}
       </View>
 
-      {match.resultText ? (
-        <Card style={{ backgroundColor: '#E3F4EB' }}>
-          <Text variant="title">{match.resultText}</Text>
-        </Card>
-      ) : null}
+      <MatchResultCard match={match} />
 
       {[...match.innings].sort((x, y) => x.inningsNo - y.inningsNo).map((inn) => {
         const state = live.innings[inn.inningsNo] ?? inn.snapshot;

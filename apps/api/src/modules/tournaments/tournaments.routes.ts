@@ -5,6 +5,7 @@ import { asyncHandler } from '../../lib/http';
 import { idParams, uuidSchema } from '../../lib/ids';
 import { requireAuth, uid } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
+import * as awards from './awards.service';
 import * as series from './series.service';
 import * as tournaments from './tournaments.service';
 
@@ -37,6 +38,15 @@ tournamentsRouter.get(
   validate(idParams, 'params'),
   asyncHandler(async (req, res) => {
     res.json({ tournament: await tournaments.getTournament(req.params.id!) });
+  }),
+);
+
+// Public: champion, Man of the Series, top scorer, top wicket-taker.
+tournamentsRouter.get(
+  '/:id/awards',
+  validate(idParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ awards: await awards.getTournamentAwards(req.params.id!) });
   }),
 );
 
@@ -112,6 +122,14 @@ seriesRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     res.json({ series: await series.listMySeries(uid(req)) });
+  }),
+);
+
+seriesRouter.get(
+  '/:id/awards',
+  validate(idParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ awards: await awards.getSeriesAwards(req.params.id!) });
   }),
 );
 

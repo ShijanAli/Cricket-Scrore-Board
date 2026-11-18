@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { oversFromBalls } from '@cricket/engine';
 import { playerNames, teamName, xiOf, type MatchDetail, type Intent } from '@cricket/client-core';
+import { useCelebrations } from '@/cricket/useCelebrations';
 import { ExtrasSheet } from '@/cricket/ExtrasSheet';
 import { OverStrip } from '@/cricket/OverStrip';
 import { PlayerPicker, type PickablePlayer } from '@/cricket/PlayerPicker';
@@ -18,6 +19,8 @@ export function ScoringView({ match, inningsNo }: { match: MatchDetail; inningsN
   const { controller, snapshot, lock } = useScoring(match, inningsNo);
   const { state } = snapshot;
   const nameOf = playerNames(match.players);
+  const liveInnings = useMemo(() => [{ inningsNo, snapshot: state }], [inningsNo, state]);
+  useCelebrations(match, liveInnings);
   const [extra, setExtra] = useState<ExtraKind | null>(null);
   const [wicketOpen, setWicketOpen] = useState(false);
 

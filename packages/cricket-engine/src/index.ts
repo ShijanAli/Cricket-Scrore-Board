@@ -8,3 +8,6 @@ export * from './tournament/dates';
 export * from './tournament/fixtures';
 export * from './tournament/scheduler';
 export * from './tournament/standings';
+export * from './match/highlights';
+export * from './match/awards';
+export * from './match/report';

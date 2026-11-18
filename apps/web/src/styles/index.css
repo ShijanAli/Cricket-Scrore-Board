@@ -63,3 +63,20 @@
     @apply bg-background text-foreground antialiased;
   }
 }
+
+/* ---- celebrations ---- */
+@keyframes celebrate-pop {
+  0% { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+  45% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--dx), 110vh, 0) rotate(720deg); opacity: 0.9; }
+}
+.animate-celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.confetti-piece { animation: confetti-fall var(--dur) linear var(--delay) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-celebrate-pop { animation: none; }
+  .confetti-piece { display: none; }
+}

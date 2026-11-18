@@ -218,3 +218,29 @@ export interface SeriesDetail extends SeriesListItem {
   matches: MatchSummary[];
   score: { winsA: number; winsB: number; needed: number; winnerTeamId: string | null };
 }
+
+// ---------- awards ----------
+export interface AwardPlayer {
+  playerId: string;
+  name: string;
+  teamId: string;
+  teamName: string;
+  matches: number;
+  runs: number;
+  balls: number;
+  fours: number;
+  sixes: number;
+  wickets: number;
+  ballsBowled: number;
+  runsConceded: number;
+  points: number;
+}
+
+export interface SeriesAwards {
+  matchesCounted: number;
+  champion: { id: string; name: string } | null;
+  runnerUp: { id: string; name: string } | null;
+  manOfTheSeries: AwardPlayer | null;
+  topRunScorer: AwardPlayer | null;
+  topWicketTaker: AwardPlayer | null;
+}

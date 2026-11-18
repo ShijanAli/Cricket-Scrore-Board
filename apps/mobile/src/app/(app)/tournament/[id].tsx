@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { groupByStage, type TournamentDetail } from '@cricket/client-core';
+import { AwardsCard } from '@/cricket/AwardsCard';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { StandingsTable } from '@/cricket/StandingsTable';
 import {
@@ -11,6 +12,7 @@ import {
   useGenerateFixtures,
   useRemoveTournamentTeam,
   useStandings,
+  useTournamentAwards,
   useTeams,
   useTournament,
 } from '@/hooks/queries';
@@ -113,6 +115,7 @@ function Detail({ t }: { t: TournamentDetail }) {
   const me = useAuth((s) => s.user?.id);
   const canManage = t.members.some((m) => m.userId === me && m.role === 'organiser');
   const [tab, setTab] = useState<Tab>(t.status === 'draft' ? 'teams' : 'fixtures');
+  const awards = useTournamentAwards(t.id);
   return (
     <>
       <Stack.Screen options={{ title: t.name }} />
@@ -120,6 +123,7 @@ function Detail({ t }: { t: TournamentDetail }) {
         <Badge label={t.status === 'draft' ? 'Setting up' : t.status === 'live' ? 'In progress' : 'Completed'} tone={t.status === 'live' ? 'live' : t.status === 'completed' ? 'success' : 'neutral'} />
         <Badge label={`${t.rules.oversPerInnings} overs`} />
       </View>
+      <AwardsCard awards={awards.data} />
       <Segmented options={[{ value: 'teams', label: 'Teams' }, { value: 'fixtures', label: 'Fixtures' }, { value: 'table', label: 'Table' }] as const} value={tab} onChange={setTab} />
       {tab === 'teams' ? <TeamsSection t={t} canManage={canManage} /> : null}
       {tab === 'fixtures' ? <FixturesSection id={t.id} /> : null}

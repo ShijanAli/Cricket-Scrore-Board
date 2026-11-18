@@ -12,6 +12,10 @@ export const seriesApi = baseApi.injectEndpoints({
       queryFn: (id: string) => call(() => api.series.get(id)),
       providesTags: (_r, _e, id) => [{ type: 'Series', id }],
     }),
+    getSeriesAwards: b.query({
+      queryFn: (id: string) => call(() => api.series.awards(id)),
+      providesTags: (_r, _e, id) => [{ type: 'Series', id }],
+    }),
     createSeries: b.mutation({
       queryFn: (input: CreateSeriesInput) => call(() => api.series.create(input)),
       invalidatesTags: ['SeriesList'],
@@ -19,4 +23,4 @@ export const seriesApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetSeriesListQuery, useGetSeriesQuery, useCreateSeriesMutation } = seriesApi;
+export const { useGetSeriesListQuery, useGetSeriesQuery, useGetSeriesAwardsQuery, useCreateSeriesMutation } = seriesApi;

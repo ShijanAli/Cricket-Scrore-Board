@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { FixturesList, StandingsView } from '@/components/cricket/TournamentView';
+import { FixturesList, StandingsView, TournamentAwards } from '@/components/cricket/TournamentView';
 import { PageHeader } from '@/components/common/PageHeader';
 import { QueryBoundary } from '@/components/common/QueryBoundary';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ export function PublicTournamentPage() {
               <Badge variant="outline">{t.rules.oversPerInnings} overs</Badge>
               <Badge variant="outline">{t.teams.length} teams</Badge>
             </div>
+            <TournamentAwards id={t.id} />
             <Tabs defaultValue={t.status === 'draft' ? 'table' : 'fixtures'}>
               <TabsList>
                 <TabsTrigger value="fixtures">Fixtures</TabsTrigger>

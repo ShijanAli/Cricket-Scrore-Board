@@ -12,6 +12,10 @@ export const tournamentsApi = baseApi.injectEndpoints({
       queryFn: (id: string) => call(() => api.tournaments.get(id)),
       providesTags: (_r, _e, id) => [{ type: 'Tournament', id }],
     }),
+    getTournamentAwards: b.query({
+      queryFn: (id: string) => call(() => api.tournaments.awards(id)),
+      providesTags: (_r, _e, id) => [{ type: 'Standings', id }, { type: 'Tournament', id }],
+    }),
     getFixtures: b.query({
       queryFn: (id: string) => call(() => api.tournaments.fixtures(id)),
       providesTags: (_r, _e, id) => [{ type: 'Fixtures', id }],
@@ -53,6 +57,7 @@ export const {
   useGetTournamentQuery,
   useGetFixturesQuery,
   useGetStandingsQuery,
+  useGetTournamentAwardsQuery,
   useCreateTournamentMutation,
   useAddTournamentTeamMutation,
   useRemoveTournamentTeamMutation,

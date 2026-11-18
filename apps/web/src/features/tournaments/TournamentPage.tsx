@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { TournamentDetail } from '@cricket/client-core';
 import { useParams } from 'react-router-dom';
-import { FixturesList, StandingsView } from '@/components/cricket/TournamentView';
+import { FixturesList, StandingsView, TournamentAwards } from '@/components/cricket/TournamentView';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ErrorState } from '@/components/common/ErrorState';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -139,6 +139,7 @@ function Detail({ t }: { t: TournamentDetail }) {
         <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABEL[t.status]}</Badge>
         <Badge variant="outline">{t.rules.oversPerInnings} overs</Badge>
       </div>
+      <TournamentAwards id={t.id} />
       <Tabs defaultValue={t.status === 'draft' ? 'teams' : 'fixtures'}>
         <TabsList>
           <TabsTrigger value="teams">Teams</TabsTrigger>

@@ -84,6 +84,10 @@ export const useScheduleMatch = (matchId: string) =>
   useApiMutation((v: ScheduleMatchInput) => api.matches.schedule(matchId, v), () => [keys.match(matchId), keys.matches, ['tournaments']]);
 
 // ---------- series ----------
+export const useTournamentAwards = (id: string) =>
+  useQuery({ queryKey: keys.awards(id), queryFn: () => api.tournaments.awards(id) });
+export const useSeriesAwards = (id: string) =>
+  useQuery({ queryKey: keys.seriesAwards(id), queryFn: () => api.series.awards(id) });
 export const useSeriesList = () => useQuery({ queryKey: keys.seriesList, queryFn: api.series.list });
 export const useSeries = (id: string) => useQuery({ queryKey: keys.series(id), queryFn: () => api.series.get(id) });
 export const useCreateSeries = () => useApiMutation((v: CreateSeriesInput) => api.series.create(v), () => [keys.seriesList]);

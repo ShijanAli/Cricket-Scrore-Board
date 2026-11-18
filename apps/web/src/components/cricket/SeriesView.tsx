@@ -2,6 +2,7 @@ import type { SeriesDetail } from '@cricket/client-core';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import type { LinkMode } from '@/lib/paths';
+import { AwardsCard } from './AwardsCard';
 import { FixtureRow } from './FixtureRow';
 
 /** Series score line and its matches. Read-only, so the public page and the dashboard share it. */
@@ -24,6 +25,7 @@ export function SeriesView({ series: s, mode }: { series: SeriesDetail; mode: Li
           {winner ? <Badge variant="success">{winner.name} won the series</Badge> : <Badge variant="live">In progress</Badge>}
         </CardContent>
       </Card>
+      <AwardsCard scope="series" id={s.id} />
       <section className="space-y-3">
         <h2 className="font-semibold">Matches</h2>
         <div className="grid gap-3 md:grid-cols-2">

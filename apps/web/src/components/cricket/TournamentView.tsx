@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { QueryBoundary } from '@/components/common/QueryBoundary';
 import { useGetFixturesQuery, useGetStandingsQuery } from '@/features/tournaments/tournamentsApi';
 import type { LinkMode } from '@/lib/paths';
+import { AwardsCard } from './AwardsCard';
 import { FixtureRow } from './FixtureRow';
 import { StandingsTable } from './StandingsTable';
 
@@ -36,3 +37,5 @@ export function StandingsView({ id }: { id: string }) {
     </QueryBoundary>
   );
 }
+
+export const TournamentAwards = ({ id }: { id: string }) => <AwardsCard scope="tournament" id={id} />;
