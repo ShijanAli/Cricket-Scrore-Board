@@ -6,6 +6,7 @@ import {
   NOTICE_LABEL,
   POSTABLE_NOTICE_KINDS,
   settingsDraftFrom,
+  withOvers,
   type SettingsDraft,
   type TournamentDetail,
 } from '@cricket/client-core';
@@ -69,10 +70,14 @@ function SettingsCard({ t }: { t: TournamentDetail }) {
 
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
-            <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => set('overs', v)} />
+            <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => { setNote(null); setD((x) => withOvers(x, v)); }} />
             {errors.overs ? <p className="mt-1 text-xs text-destructive">{errors.overs}</p> : null}
           </div>
           <NumberStepper label="Players per side" value={d.playersPerSide} min={2} max={15} onChange={(v) => set('playersPerSide', v)} />
+          <div>
+            <NumberStepper label="Max overs per bowler" hint="0 = no limit" value={d.maxOversPerBowler} min={0} max={d.overs} onChange={(v) => set('maxOversPerBowler', v)} />
+            {errors.maxOversPerBowler ? <p className="mt-1 text-xs text-destructive">{errors.maxOversPerBowler}</p> : null}
+          </div>
         </div>
         {t.status !== 'draft' ? (
           <p className="text-xs text-muted-foreground">

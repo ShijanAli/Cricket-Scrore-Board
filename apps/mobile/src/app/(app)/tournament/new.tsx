@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { GROUP_COUNTS, SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
 import { useCreateTournament } from '@/hooks/queries';
-import { buildTournamentInput, defaultDraft, describeGroupPlan, type TournamentDraft } from '@cricket/client-core';
+import { buildTournamentInput, defaultDraft, describeGroupPlan, withOvers, type TournamentDraft } from '@cricket/client-core';
 import { errorMessage } from '@/lib/query';
 import { Button, Chip, ErrorBanner, NumberStepper, Screen, Segmented, Text, TextField, space } from '@/ui';
 
@@ -50,7 +50,9 @@ export default function NewTournament() {
       {d.format !== 'knockout' ? (
         <Chip label={d.doubleRoundRobin ? '✓ Everyone plays twice (home & away)' : 'Everyone plays once'} selected={d.doubleRoundRobin} onPress={() => set('doubleRoundRobin', !d.doubleRoundRobin)} />
       ) : null}
-      <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => set('overs', v)} />
+      <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => setD((p) => withOvers(p, v))} />
+      <NumberStepper label="Max overs per bowler (0 = no limit)" value={d.maxOversPerBowler} min={0} max={d.overs} onChange={(v) => set('maxOversPerBowler', v)} />
+      {errors.maxOversPerBowler ? <Text variant="error">{errors.maxOversPerBowler}</Text> : null}
       <NumberStepper label="Players per side" value={d.playersPerSide} min={2} max={15} onChange={(v) => set('playersPerSide', v)} />
 
       <Text variant="label">Fixtures</Text>

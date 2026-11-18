@@ -23,6 +23,8 @@ export interface TournamentDraft {
   grounds: string;
   offWeekdays: number[];
   overs: number;
+  /** Max overs one bowler may bowl in an innings. 0 = no limit. */
+  maxOversPerBowler: number;
   playersPerSide: number;
 }
 
@@ -39,8 +41,14 @@ export const defaultDraft: TournamentDraft = {
   grounds: 'Ground 1',
   offWeekdays: [],
   overs: 10,
+  maxOversPerBowler: defaultMaxOversPerBowler(10),
   playersPerSide: 11,
 };
+
+/** Change the overs and re-derive the bowler cap (T20 -> 4, 10 overs -> 2) so the two never disagree. */
+export function withOvers<T extends { overs: number; maxOversPerBowler: number }>(d: T, overs: number): T {
+  return { ...d, overs, maxOversPerBowler: defaultMaxOversPerBowler(overs) };
+}
 
 const list = (s: string): string[] => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
 
@@ -70,7 +78,7 @@ export function buildTournamentInput(d: TournamentDraft): BuildResult {
     rules: {
       oversPerInnings: d.overs,
       playersPerSide: d.playersPerSide,
-      maxOversPerBowler: defaultMaxOversPerBowler(d.overs),
+      maxOversPerBowler: d.maxOversPerBowler === 0 ? null : d.maxOversPerBowler,
     },
   });
   if (parsed.success) return { ok: true, data: parsed.data };
@@ -79,7 +87,8 @@ export function buildTournamentInput(d: TournamentDraft): BuildResult {
   for (const issue of parsed.error.issues) {
     const [a, b] = issue.path;
     const key = a === 'scheduler' && b !== undefined ? `scheduler.${String(b)}` : String(a ?? 'form');
-    errors[key] ??= issue.message;
+    // rules.* issues: use the rule's own name (overs / maxOversPerBowler) as the field key.
+    errors[a === 'rules' && typeof b === 'string' ? (b === 'oversPerInnings' ? 'overs' : b) : key] ??= issue.message;
   }
   return { ok: false, errors };
 }

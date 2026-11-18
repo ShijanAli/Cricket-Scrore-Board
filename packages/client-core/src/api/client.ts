@@ -56,7 +56,8 @@ export class ApiClient {
   private readonly timeoutMs: number;
 
   constructor(private readonly opts: ClientOptions) {
-    this.doFetch = opts.fetchImpl ?? fetch;
+    // Arrow wrapper, not a bare `fetch` reference: calling window.fetch as a method of another object throws "Illegal invocation" in browsers.
+    this.doFetch = opts.fetchImpl ?? ((input, init) => fetch(input, init));
     this.timeoutMs = opts.timeoutMs ?? 15_000;
   }
 

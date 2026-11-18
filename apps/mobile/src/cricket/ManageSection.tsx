@@ -7,6 +7,7 @@ import {
   describeGroupPlan,
   editScope,
   settingsDraftFrom,
+  withOvers,
   type SettingsDraft,
   type TournamentDetail,
 } from '@cricket/client-core';
@@ -51,9 +52,11 @@ function SettingsCard({ t }: { t: TournamentDetail }) {
     <Card style={{ gap: space.md }}>
       <Text variant="title">Settings</Text>
       <TextField label="Tournament name" value={d.name} onChangeText={(v) => set('name', v)} error={errors.name} />
-      <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => set('overs', v)} />
+      <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => { setNote(null); setD((x) => withOvers(x, v)); }} />
       {errors.overs ? <Text variant="error">{errors.overs}</Text> : null}
       <NumberStepper label="Players per side" value={d.playersPerSide} min={2} max={15} onChange={(v) => set('playersPerSide', v)} />
+      <NumberStepper label="Max overs per bowler (0 = no limit)" value={d.maxOversPerBowler} min={0} max={d.overs} onChange={(v) => set('maxOversPerBowler', v)} />
+      {errors.maxOversPerBowler ? <Text variant="error">{errors.maxOversPerBowler}</Text> : null}
       {t.status !== 'draft' ? (
         <Text variant="muted">Overs and players apply to matches that have not started. Matches in play or finished keep their rules.</Text>
       ) : null}

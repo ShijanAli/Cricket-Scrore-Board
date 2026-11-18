@@ -21,6 +21,8 @@ export function editScope(status: TournamentStatus): EditScope {
 export interface SettingsDraft {
   name: string;
   overs: number;
+  /** 0 = no limit. */
+  maxOversPerBowler: number;
   playersPerSide: number;
   win: number;
   tie: number;
@@ -35,6 +37,7 @@ export function settingsDraftFrom(t: TournamentDetail): SettingsDraft {
   return {
     name: t.name,
     overs: t.rules.oversPerInnings,
+    maxOversPerBowler: t.rules.maxOversPerBowler ?? 0,
     playersPerSide: t.rules.playersPerSide,
     win: t.points?.win ?? 2,
     tie: t.points?.tie ?? 1,
@@ -63,11 +66,15 @@ export function buildTournamentUpdate(d: SettingsDraft, t: TournamentDetail): Se
     const pointsChanged = d.win !== t.points?.win || d.tie !== t.points?.tie || d.noResult !== t.points?.noResult || d.loss !== t.points?.loss;
     if (pointsChanged) body.points = { win: d.win, tie: d.tie, noResult: d.noResult, loss: d.loss };
   }
-  if (scope.rules && (d.overs !== t.rules.oversPerInnings || d.playersPerSide !== t.rules.playersPerSide)) {
+  if (scope.rules) {
     const oversChanged = d.overs !== t.rules.oversPerInnings;
-    // Keep a custom bowler cap unless the overs changed (then re-derive it; it can never exceed the overs).
-    const cap = oversChanged ? defaultMaxOversPerBowler(d.overs) : t.rules.maxOversPerBowler;
-    body.rules = { ...t.rules, oversPerInnings: d.overs, playersPerSide: d.playersPerSide, maxOversPerBowler: cap };
+    const savedCap = t.rules.maxOversPerBowler ?? 0;
+    const capEdited = d.maxOversPerBowler !== savedCap;
+    // An explicit cap wins. Otherwise keep the saved one, unless the overs changed (then re-derive it).
+    const capValue = capEdited ? d.maxOversPerBowler : oversChanged ? defaultMaxOversPerBowler(d.overs) : savedCap;
+    if (oversChanged || capEdited || d.playersPerSide !== t.rules.playersPerSide) {
+      body.rules = { ...t.rules, oversPerInnings: d.overs, playersPerSide: d.playersPerSide, maxOversPerBowler: capValue === 0 ? null : capValue };
+    }
   }
   if (scope.structure) {
     if (d.teamCount !== t.teamCount) body.teamCount = d.teamCount;
@@ -89,7 +96,7 @@ export function buildTournamentUpdate(d: SettingsDraft, t: TournamentDetail): Se
   if (!parsed.success) {
     for (const i of parsed.error.issues) {
       const k = String(i.path[0] ?? 'form');
-      errors[k === 'rules' ? 'overs' : k === 'points' ? 'points' : k] ??= i.message;
+      errors[k === 'rules' ? 'overs' : k] ??= i.message;
     }
   }
   if (Object.keys(errors).length) return { ok: false, errors };

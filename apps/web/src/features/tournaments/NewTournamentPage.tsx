@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { buildTournamentInput, defaultDraft, describeGroupPlan, type TournamentDraft } from '@cricket/client-core';
+import { buildTournamentInput, defaultDraft, describeGroupPlan, withOvers, type TournamentDraft } from '@cricket/client-core';
 import { GROUP_COUNTS, SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
 import { useNavigate } from 'react-router-dom';
 import { ChoiceGroup, MultiChoiceGroup } from '@/components/common/ChoiceGroup';
@@ -78,8 +78,13 @@ export function NewTournamentPage() {
                 <NumberStepper label="Number of teams" value={d.teamCount} min={2} max={32} onChange={(v) => set('teamCount', v)} />
                 {errors.teamCount ? <p className="mt-1 text-xs text-destructive">{errors.teamCount}</p> : null}
               </div>
-              <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => set('overs', v)} />
+              <NumberStepper label="Overs per innings" value={d.overs} min={1} max={50} onChange={(v) => setD((p) => withOvers(p, v))} />
               <NumberStepper label="Players per side" value={d.playersPerSide} min={2} max={15} onChange={(v) => set('playersPerSide', v)} />
+            </div>
+
+            <div>
+              <NumberStepper label="Max overs per bowler" hint="0 = no limit" value={d.maxOversPerBowler} min={0} max={d.overs} onChange={(v) => set('maxOversPerBowler', v)} />
+              {errors.maxOversPerBowler ? <p role="alert" className="mt-1 text-xs text-destructive">{errors.maxOversPerBowler}</p> : null}
             </div>
 
             {d.format !== 'knockout' ? (
