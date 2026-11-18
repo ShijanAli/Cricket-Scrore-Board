@@ -3,7 +3,11 @@ import type {
   AddSquadPlayerInput,
   CreateSeriesInput,
   CreateSingleMatchInput,
+  CreateNoticeInput,
   CreateTournamentInput,
+  PauseTournamentInput,
+  ResumeTournamentInput,
+  UpdateTournamentInput,
   ScheduleMatchInput,
   CreateTeamInput,
   InningsSetup,
@@ -65,6 +69,20 @@ export const useTournament = (id: string) => useQuery({ queryKey: keys.tournamen
 export const useFixtures = (id: string) => useQuery({ queryKey: keys.fixtures(id), queryFn: () => api.tournaments.fixtures(id) });
 export const useStandings = (id: string) => useQuery({ queryKey: keys.standings(id), queryFn: () => api.tournaments.standings(id) });
 
+export const useTournamentNotices = (id: string, poll = false) =>
+  useQuery({ queryKey: keys.notices(id), queryFn: () => api.tournaments.notices(id), refetchInterval: poll ? 20_000 : false });
+
+export const useUpdateTournament = (id: string) =>
+  useApiMutation((v: UpdateTournamentInput) => api.tournaments.update(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const usePauseTournament = (id: string) =>
+  useApiMutation((v: PauseTournamentInput) => api.tournaments.pause(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const useResumeTournament = (id: string) =>
+  useApiMutation((v: ResumeTournamentInput) => api.tournaments.resume(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const useAddTournamentNotice = (id: string) =>
+  useApiMutation((v: CreateNoticeInput) => api.tournaments.addNotice(id, v), () => [keys.notices(id)]);
+export const useResolveTournamentNotice = (id: string) =>
+  useApiMutation((noticeId: string) => api.tournaments.resolveNotice(id, noticeId), () => [keys.notices(id)]);
+
 export const useCreateTournament = () =>
   useApiMutation((v: CreateTournamentInput) => api.tournaments.create(v), () => [keys.tournaments]);
 
@@ -84,6 +102,10 @@ export const useScheduleMatch = (matchId: string) =>
   useApiMutation((v: ScheduleMatchInput) => api.matches.schedule(matchId, v), () => [keys.match(matchId), keys.matches, ['tournaments']]);
 
 // ---------- series ----------
+export const useTournamentAwards = (id: string) =>
+  useQuery({ queryKey: keys.awards(id), queryFn: () => api.tournaments.awards(id) });
+export const useSeriesAwards = (id: string) =>
+  useQuery({ queryKey: keys.seriesAwards(id), queryFn: () => api.series.awards(id) });
 export const useSeriesList = () => useQuery({ queryKey: keys.seriesList, queryFn: api.series.list });
 export const useSeries = (id: string) => useQuery({ queryKey: keys.series(id), queryFn: () => api.series.get(id) });
 export const useCreateSeries = () => useApiMutation((v: CreateSeriesInput) => api.series.create(v), () => [keys.seriesList]);

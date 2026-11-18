@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { TournamentDetail } from '@/api/types';
+import { groupByStage, groupStandings, type TournamentDetail } from '@cricket/client-core';
+import { AwardsCard } from '@/cricket/AwardsCard';
+import { ManageSection } from '@/cricket/ManageSection';
+import { NoticesBanner } from '@/cricket/NoticesBanner';
+import { tournamentBadge } from '@/cricket/tournamentStatus';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { StandingsTable } from '@/cricket/StandingsTable';
-import { groupByStage } from '@/cricket/fixture-utils';
 import {
   useAddTournamentScorer,
   useAddTournamentTeam,
@@ -12,6 +15,7 @@ import {
   useGenerateFixtures,
   useRemoveTournamentTeam,
   useStandings,
+  useTournamentAwards,
   useTeams,
   useTournament,
 } from '@/hooks/queries';
@@ -19,7 +23,7 @@ import { errorMessage } from '@/lib/query';
 import { useAuth } from '@/state/auth';
 import { Badge, Button, Card, Chip, EmptyState, ErrorBanner, QueryBoundary, Screen, Segmented, TeamBadge, Text, TextField, space } from '@/ui';
 
-type Tab = 'teams' | 'fixtures' | 'table';
+type Tab = 'teams' | 'fixtures' | 'table' | 'manage';
 
 function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolean }) {
   const myTeams = useTeams();
@@ -48,9 +52,13 @@ function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolea
         <Card key={e.teamId} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <TeamBadge shortName={e.team.shortName} color={e.team.color} />
           <Text variant="label" style={{ flex: 1 }}>{e.team.name}</Text>
+          {e.groupName ? <Badge label={`Group ${e.groupName}`} /> : null}
           {canManage && draft ? <Button title="Remove" variant="ghost" compact onPress={() => remove.mutate(e.teamId)} /> : null}
         </Card>
       ))}
+      {t.format === 'groups_knockout' && draft ? (
+        <Text variant="muted">Groups are drawn automatically by seed when you create fixtures. The top 2 of each group go to the knockout.</Text>
+      ) : null}
       {remove.isError ? <ErrorBanner message={errorMessage(remove.error)} /> : null}
 
       {canManage && draft && !full ? (
@@ -105,7 +113,20 @@ function TableSection({ id }: { id: string }) {
   const standings = useStandings(id);
   return (
     <QueryBoundary query={standings} isEmpty={(d) => d.length === 0} empty={<EmptyState title="No table yet" hint="The table appears once teams are added." />}>
-      {(rows) => <StandingsTable rows={rows} />}
+      {(rows) => (
+        <>
+          {groupStandings(rows).map((g) => (
+            <View key={g.label} style={{ gap: space.sm }}>
+              {g.group ? (
+                <Text variant="title">
+                  {g.label} <Text variant="muted">· top 2 go through</Text>
+                </Text>
+              ) : null}
+              <StandingsTable rows={g.rows} qualifyCount={g.group ? 2 : 0} />
+            </View>
+          ))}
+        </>
+      )}
     </QueryBoundary>
   );
 }
@@ -114,17 +135,25 @@ function Detail({ t }: { t: TournamentDetail }) {
   const me = useAuth((s) => s.user?.id);
   const canManage = t.members.some((m) => m.userId === me && m.role === 'organiser');
   const [tab, setTab] = useState<Tab>(t.status === 'draft' ? 'teams' : 'fixtures');
+  const awards = useTournamentAwards(t.id);
   return (
     <>
       <Stack.Screen options={{ title: t.name }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Badge label={t.status === 'draft' ? 'Setting up' : t.status === 'live' ? 'In progress' : 'Completed'} tone={t.status === 'live' ? 'live' : t.status === 'completed' ? 'success' : 'neutral'} />
+        <Badge {...tournamentBadge(t.status)} />
         <Badge label={`${t.rules.oversPerInnings} overs`} />
       </View>
-      <Segmented options={[{ value: 'teams', label: 'Teams' }, { value: 'fixtures', label: 'Fixtures' }, { value: 'table', label: 'Table' }] as const} value={tab} onChange={setTab} />
+      <NoticesBanner id={t.id} />
+      <AwardsCard awards={awards.data} />
+      <Segmented
+        options={[{ value: 'teams', label: 'Teams' }, { value: 'fixtures', label: 'Fixtures' }, { value: 'table', label: 'Table' }, ...(canManage ? [{ value: 'manage', label: 'Manage' }] : [])] as { value: Tab; label: string }[]}
+        value={tab}
+        onChange={setTab}
+      />
       {tab === 'teams' ? <TeamsSection t={t} canManage={canManage} /> : null}
       {tab === 'fixtures' ? <FixturesSection id={t.id} /> : null}
       {tab === 'table' ? <TableSection id={t.id} /> : null}
+      {tab === 'manage' && canManage ? <ManageSection t={t} /> : null}
     </>
   );
 }

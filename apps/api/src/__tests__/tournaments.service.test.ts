@@ -243,3 +243,95 @@ describe('series', () => {
     expect(err.status).toBe(403);
   });
 });
+
+describe('group stage + knockout', () => {
+  const groupTournament = (teamCount: number, groupCount: number, over: Partial<CreateTournamentFormValues> = {}) =>
+    makeTournament({ format: 'groups_knockout', teamCount, groupCount, ...over });
+
+  const finish = (m: { id: string }, winnerId: string) => {
+    const row = db.table('match').rows.find((r) => r.id === m.id)!;
+    row.status = 'walkover';
+    row.winnerId = winnerId;
+  };
+
+  it('schema needs a valid group count and enough teams', () => {
+    expect(() => createTournamentSchema.parse({ ...base, format: 'groups_knockout', teamCount: 16 })).toThrow();
+    expect(() => createTournamentSchema.parse({ ...base, format: 'groups_knockout', teamCount: 16, groupCount: 3 })).toThrow();
+    expect(() => createTournamentSchema.parse({ ...base, format: 'groups_knockout', teamCount: 6, groupCount: 4 })).toThrow();
+    expect(createTournamentSchema.parse({ ...base, format: 'groups_knockout', teamCount: 16, groupCount: 4 }).groupCount).toBe(4);
+  });
+
+  it('16 teams / 4 groups: auto draw, 31 matches, groups saved on the teams', async () => {
+    const t = await groupTournament(16, 4, {
+      scheduler: { startDate: '2026-12-01', endDate: '2026-12-31', slots: ['09:00', '14:00'], grounds: ['G1', 'G2'] },
+    });
+    for (const tm of addTeams(16)) await svc.addTeam(t.id, owner, tm.id);
+    const fixtures = await svc.generateTournamentFixtures(t.id, owner);
+    expect(fixtures).toHaveLength(31);
+    expect(fixtures.filter((m) => m.stage === 'group_A')).toHaveLength(6);
+    expect(fixtures.filter((m) => m.stage === 'quarter_final')).toHaveLength(4);
+    const groupOf = (id: string) => db.table('tournamentTeam').rows.find((r) => r.teamId === id)!.groupName;
+    expect(['A', 'B', 'C', 'D'].map((g) => db.table('tournamentTeam').rows.filter((r) => r.groupName === g).length)).toEqual([4, 4, 4, 4]);
+    for (const m of fixtures.filter((x) => x.stage === 'group_B')) expect(groupOf(m.teamAId!)).toBe('B');
+    // the final is the last match played
+    const last = [...fixtures].sort((a, b) => `${a.scheduledDate}${a.scheduledTime}`.localeCompare(`${b.scheduledDate}${b.scheduledTime}`)).at(-1)!;
+    expect(last.stage).toBe('final');
+  });
+
+  it('manual draw is used; a half-done draw is refused', async () => {
+    const t = await groupTournament(8, 2, { scheduleMode: 'manual', scheduler: undefined });
+    const teams = addTeams(8);
+    for (const tm of teams) await svc.addTeam(t.id, owner, tm.id);
+    await svc.setGroups(t.id, owner, [{ teamId: teams[0]!.id, group: 'B' }]);
+    expect((await failure(svc.generateTournamentFixtures(t.id, owner))).code).toBe('GROUPS_INCOMPLETE');
+    expect((await failure(svc.setGroups(t.id, owner, [{ teamId: teams[0]!.id, group: 'C' }]))).code).toBe('BAD_GROUP');
+    await svc.setGroups(t.id, owner, teams.map((tm, i) => ({ teamId: tm.id, group: i < 5 ? 'A' : 'B' })));
+    const fixtures = await svc.generateTournamentFixtures(t.id, owner);
+    expect(fixtures.filter((m) => m.stage === 'group_A')).toHaveLength(10); // 5 teams
+    expect(fixtures.filter((m) => m.stage === 'group_B')).toHaveLength(3);
+    expect(fixtures.filter((m) => m.stage === 'semi_final')).toHaveLength(2);
+  });
+
+  it('top two of each group fill the knockout slots, winners advance, tournament completes', async () => {
+    const t = await groupTournament(8, 2, { scheduleMode: 'manual', scheduler: undefined });
+    const teams = addTeams(8);
+    for (const tm of teams) await svc.addTeam(t.id, owner, tm.id);
+    let fixtures = await svc.generateTournamentFixtures(t.id, owner);
+    const byId = new Map(db.table('tournamentTeam').rows.map((r) => [r.teamId, r.groupName as string]));
+
+    // Within each group the team that joined first beats everyone: it wins the group, the next is 2nd.
+    const rank = (id: string) => teams.findIndex((x) => x.id === id);
+    for (const m of fixtures.filter((x) => x.stage.startsWith('group_'))) {
+      finish(m, rank(m.teamAId!) < rank(m.teamBId!) ? m.teamAId! : m.teamBId!);
+    }
+    await svc.advanceTournament(t.id);
+    fixtures = await svc.listFixtures(t.id);
+    const semis = fixtures.filter((x) => x.stage === 'semi_final');
+    const inGroup = (g: string) => teams.filter((x) => byId.get(x.id) === g).sort((a, b) => rank(a.id) - rank(b.id));
+    const [a1, a2] = inGroup('A');
+    const [b1, b2] = inGroup('B');
+    // 1A v 2B and 1B v 2A
+    expect([semis[0]!.teamAId, semis[0]!.teamBId]).toEqual([a1!.id, b2!.id]);
+    expect([semis[1]!.teamAId, semis[1]!.teamBId]).toEqual([b1!.id, a2!.id]);
+
+    for (const s of semis) finish(s, s.teamAId!);
+    await svc.advanceTournament(t.id);
+    fixtures = await svc.listFixtures(t.id);
+    const final = fixtures.at(-1)!;
+    expect(final.stage).toBe('final');
+    expect([final.teamAId, final.teamBId]).toEqual([a1!.id, b1!.id]);
+    finish(final, a1!.id);
+    await svc.advanceTournament(t.id);
+    expect(db.table('tournament').rows[0]!.status).toBe('completed');
+  });
+
+  it('standings are one table per group', async () => {
+    const t = await groupTournament(8, 2, { scheduleMode: 'manual', scheduler: undefined });
+    for (const tm of addTeams(8)) await svc.addTeam(t.id, owner, tm.id);
+    await svc.generateTournamentFixtures(t.id, owner);
+    const rows = await svc.getStandings(t.id);
+    expect(rows).toHaveLength(8);
+    expect(rows.filter((r) => r.group === 'A')).toHaveLength(4);
+    expect(rows.filter((r) => r.group === 'A').map((r) => r.rank)).toEqual([1, 2, 3, 4]);
+  });
+});

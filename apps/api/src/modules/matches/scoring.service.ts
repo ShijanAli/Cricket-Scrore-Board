@@ -7,7 +7,7 @@ import { badRequest, conflict, notFound } from '../../lib/errors';
 import { isUuid } from '../../lib/ids';
 import { asInnings, parseEvent, parseRules, toJson } from '../../lib/json';
 import { liveBus } from '../live/live-bus';
-import { assertCanScore } from './access';
+import { assertCanScore, assertTournamentNotPaused } from './access';
 import { afterMatchFinished } from './after-match';
 import { planIngest } from './ingest';
 import { getMatchView } from './matches.service';
@@ -154,6 +154,7 @@ export async function ingestEvents(
   input: IngestEventsInput,
 ): Promise<IngestResult> {
   const match = await assertCanScore(matchId, userId);
+  await assertTournamentNotPaused(match.tournamentId);
   if (isFinished(match.status) && match.status !== 'completed') {
     throw conflict('The match is already finished', 'MATCH_FINISHED');
   }

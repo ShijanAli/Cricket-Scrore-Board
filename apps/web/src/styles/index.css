@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.985 0.004 150);
+  --foreground: oklch(0.2 0.02 160);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 160);
+  /* brand green #0E7C4A */
+  --primary: oklch(0.5 0.115 157);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.955 0.02 155);
+  --secondary-foreground: oklch(0.3 0.06 157);
+  --muted: oklch(0.96 0.008 155);
+  --muted-foreground: oklch(0.48 0.02 160);
+  --accent: oklch(0.94 0.035 155);
+  --accent-foreground: oklch(0.3 0.06 157);
+  --destructive: oklch(0.55 0.22 27);
+  --border: oklch(0.9 0.01 155);
+  --input: oklch(0.9 0.01 155);
+  --ring: oklch(0.5 0.115 157);
+  --success: oklch(0.5 0.115 157);
+  --warning: oklch(0.62 0.15 60);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* ---- celebrations ---- */
+@keyframes celebrate-pop {
+  0% { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+  45% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes confetti-fall {
+  0% { transform: translate3d(0, -10vh, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(var(--dx), 110vh, 0) rotate(720deg); opacity: 0.9; }
+}
+.animate-celebrate-pop { animation: celebrate-pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.confetti-piece { animation: confetti-fall var(--dur) linear var(--delay) both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-celebrate-pop { animation: none; }
+  .confetti-piece { display: none; }
+}

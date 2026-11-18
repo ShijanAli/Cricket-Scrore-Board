@@ -11,7 +11,7 @@ import { badRequest, conflict, notFound } from '../../lib/errors';
 import { parseRules, toJson } from '../../lib/json';
 import { shortNameOf } from '../../lib/strings';
 import { liveBus } from '../live/live-bus';
-import { assertCanScore } from './access';
+import { assertCanScore, assertTournamentNotPaused } from './access';
 import { afterMatchFinished } from './after-match';
 import { matchInclude, withDateString } from './mapper';
 
@@ -125,6 +125,7 @@ export async function setPlayingXI(matchId: string, userId: string, input: Playi
 
 export async function recordToss(matchId: string, userId: string, input: TossInput) {
   const match = await assertCanScore(matchId, userId);
+  await assertTournamentNotPaused(match.tournamentId);
   if (!isPreMatch(match.status)) throw conflict('The match has already started', 'MATCH_STARTED');
   if (!match.teamAId || !match.teamBId) throw conflict('Both teams must be decided first', 'TEAMS_NOT_SET');
   if (input.winnerTeamId !== match.teamAId && input.winnerTeamId !== match.teamBId) {

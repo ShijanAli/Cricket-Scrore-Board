@@ -1,8 +1,6 @@
 import { View } from 'react-native';
-import type { MatchSummary } from '@/api/types';
+import { sideLabel, isFinished, statusLabel, statusTone, type MatchSummary } from '@cricket/client-core';
 import { Badge, Card, Text, space } from '@/ui';
-import { sideLabel } from './fixture-utils';
-import { isFinished, statusLabel, statusTone } from './match-utils';
 
 export function FixtureRow({ match, onPress }: { match: MatchSummary; onPress: () => void }) {
   const when = [match.scheduledDate?.slice(0, 10), match.scheduledTime, match.ground].filter(Boolean).join(' · ');

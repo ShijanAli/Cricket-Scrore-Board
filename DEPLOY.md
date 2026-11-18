@@ -80,3 +80,20 @@ Notes:
 | Container restarts | `docker compose logs api`: usually a JWT secret shorter than 32 characters |
 | Login works, live score never updates | proxy blocks WebSockets (Caddy and Railway/Render allow them by default) |
 | EAS build: "Cannot find module @cricket/shared" | `eas-build-post-install` script missing or the repo root was not uploaded (run from `apps/mobile` inside a git repo) |
+
+## Web app (`apps/web`)
+
+React + Vite + Tailwind + shadcn/ui + Redux Toolkit. Public viewer, organiser dashboard and web scoring (offline outbox in IndexedDB).
+
+Local: `cp apps/web/.env.example apps/web/.env`, set `VITE_API_URL`, then `pnpm --filter @cricket/web dev`.
+
+Vercel: create a project with **Root Directory = `apps/web`** (it uses `apps/web/vercel.json`), and set:
+
+| Variable | Value |
+| --- | --- |
+| `VITE_API_URL` | your API URL, `https://...` |
+| `VITE_ENABLE_SOCKET` | `false` on Vercel serverless API, `true` on a long-running server |
+
+Also add the web URL to the API `CORS_ORIGIN`.
+
+Socket.io does not work on Vercel serverless functions. With `VITE_ENABLE_SOCKET=false` (or when the socket is disconnected) the web app polls every 10 s. For true realtime, host the API on a long-running server (Railway/Render/VPS).

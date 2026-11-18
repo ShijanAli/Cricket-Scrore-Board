@@ -1,5 +1,4 @@
-import { ApiClient } from '@/api/client';
-import { createApi } from '@/api/endpoints';
+import { ApiClient, createApi } from '@cricket/client-core';
 import { resolveApiUrl } from './config';
 import { secureTokenStore } from './secure-session';
 

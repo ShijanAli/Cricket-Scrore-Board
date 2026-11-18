@@ -1,16 +1,29 @@
 import { Router } from 'express';
-import { createSeriesSchema, createTournamentSchema } from '@cricket/shared';
+import {
+  createNoticeSchema,
+  createSeriesSchema,
+  createTournamentSchema,
+  pauseTournamentSchema,
+  resumeTournamentSchema,
+  updateTournamentSchema,
+} from '@cricket/shared';
 import { z } from 'zod';
 import { asyncHandler } from '../../lib/http';
 import { idParams, uuidSchema } from '../../lib/ids';
 import { requireAuth, uid } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
+import * as admin from './admin.service';
+import * as awards from './awards.service';
 import * as series from './series.service';
 import * as tournaments from './tournaments.service';
 
 const addTeamSchema = z.object({ teamId: uuidSchema, seed: z.number().int().min(1).max(64).optional() });
 const addScorerSchema = z.object({ email: z.string().trim().toLowerCase().email() });
+const groupsSchema = z.object({
+  assignments: z.array(z.object({ teamId: uuidSchema, group: z.string().regex(/^[A-H]$/).nullable() })).min(1).max(64),
+});
 const teamParams = z.object({ id: uuidSchema, teamId: uuidSchema });
+const noticeParams = z.object({ id: uuidSchema, noticeId: uuidSchema });
 
 export const tournamentsRouter = Router();
 
@@ -40,6 +53,73 @@ tournamentsRouter.get(
   }),
 );
 
+tournamentsRouter.patch(
+  '/:id',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(updateTournamentSchema),
+  asyncHandler(async (req, res) => {
+    res.json(await admin.updateTournament(req.params.id!, uid(req), req.body));
+  }),
+);
+
+tournamentsRouter.post(
+  '/:id/pause',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(pauseTournamentSchema),
+  asyncHandler(async (req, res) => {
+    res.json(await admin.pauseTournament(req.params.id!, uid(req), req.body));
+  }),
+);
+
+tournamentsRouter.post(
+  '/:id/resume',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(resumeTournamentSchema),
+  asyncHandler(async (req, res) => {
+    res.json(await admin.resumeTournament(req.params.id!, uid(req), req.body));
+  }),
+);
+
+// Public: the incident log (active notices are shown as banners).
+tournamentsRouter.get(
+  '/:id/notices',
+  validate(idParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ notices: await admin.listNotices(req.params.id!) });
+  }),
+);
+
+tournamentsRouter.post(
+  '/:id/notices',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(createNoticeSchema),
+  asyncHandler(async (req, res) => {
+    res.status(201).json({ notice: await admin.createNotice(req.params.id!, uid(req), req.body) });
+  }),
+);
+
+tournamentsRouter.post(
+  '/:id/notices/:noticeId/resolve',
+  requireAuth,
+  validate(noticeParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ notice: await admin.resolveNotice(req.params.id!, uid(req), req.params.noticeId!) });
+  }),
+);
+
+// Public: champion, Man of the Series, top scorer, top wicket-taker.
+tournamentsRouter.get(
+  '/:id/awards',
+  validate(idParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ awards: await awards.getTournamentAwards(req.params.id!) });
+  }),
+);
+
 tournamentsRouter.post(
   '/:id/teams',
   requireAuth,
@@ -48,6 +128,17 @@ tournamentsRouter.post(
   asyncHandler(async (req, res) => {
     const { teamId, seed } = req.body as z.infer<typeof addTeamSchema>;
     res.status(201).json({ entry: await tournaments.addTeam(req.params.id!, uid(req), teamId, seed) });
+  }),
+);
+
+tournamentsRouter.put(
+  '/:id/groups',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(groupsSchema),
+  asyncHandler(async (req, res) => {
+    const { assignments } = req.body as z.infer<typeof groupsSchema>;
+    res.json({ teams: await tournaments.setGroups(req.params.id!, uid(req), assignments) });
   }),
 );
 
@@ -112,6 +203,14 @@ seriesRouter.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     res.json({ series: await series.listMySeries(uid(req)) });
+  }),
+);
+
+seriesRouter.get(
+  '/:id/awards',
+  validate(idParams, 'params'),
+  asyncHandler(async (req, res) => {
+    res.json({ awards: await awards.getSeriesAwards(req.params.id!) });
   }),
 );
 

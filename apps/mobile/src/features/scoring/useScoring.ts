@@ -2,11 +2,9 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { AppState } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiError } from '@/api/client';
-import type { MatchDetail } from '@/api/types';
+import { ApiError, ScoringController, type ScoringSnapshot, type MatchDetail } from '@cricket/client-core';
 import { api } from '@/lib/api';
 import { keys } from '@/lib/query';
-import { ScoringController, type ScoringSnapshot } from './controller';
 import { SqliteEventStore } from './sqlite-store';
 
 export type LockState = 'pending' | 'held' | 'denied';

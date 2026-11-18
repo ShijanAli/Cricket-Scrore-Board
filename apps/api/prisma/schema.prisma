@@ -88,11 +88,16 @@ enum TournamentFormat {
   league_final
   league_semi_final
   knockout
+  groups_knockout
 }
 
 enum TournamentStatus {
   draft
   live
+  /**
+   * Organiser halted play (dispute, weather...). No scoring or progression until resumed.
+   */
+  paused
   completed
 }
 
@@ -241,6 +246,10 @@ model Tournament {
   name             String           @db.VarChar(80)
   format           TournamentFormat
   teamCount        Int
+  /**
+   * groups_knockout only: 2, 4 or 8 groups. Top two of each group go through.
+   */
+  groupCount       Int?
   doubleRoundRobin Boolean          @default(false)
   scheduleMode     ScheduleMode     @default(auto)
   status           TournamentStatus @default(draft)
@@ -267,6 +276,7 @@ model Tournament {
   members TournamentMember[]
   teams   TournamentTeam[]
   matches Match[]
+  notices TournamentNotice[]
 
   @@index([ownerId])
   @@index([status])
@@ -298,6 +308,10 @@ model TournamentTeam {
    * Seed, used for knockout brackets. 1 = top seed.
    */
   seed         Int?
+  /**
+   * groups_knockout only: "A", "B", ... Set before fixtures are generated.
+   */
+  groupName    String?  @db.VarChar(2)
   entryFeePaid Boolean  @default(false)
   createdAt    DateTime @default(now()) @db.Timestamptz
 
@@ -350,7 +364,7 @@ model Match {
    */
   matchNo   Int?
   /**
-   * league | quarter_final | semi_final | final | round_of_N
+   * league | group_A.. | quarter_final | semi_final | final | round_of_N
    */
   stage     String? @db.VarChar(20)
   round     Int?
@@ -540,4 +554,24 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+/// Public announcements about a tournament: delays, disputes, pauses. Active until resolved.
+model TournamentNotice {
+  id           String    @id @default(uuid()) @db.Uuid
+  tournamentId String    @db.Uuid
+  /**
+   * One of NOTICE_KINDS (validated in the API).
+   */
+  kind         String    @db.VarChar(20)
+  title        String    @db.VarChar(120)
+  message      String    @default("") @db.VarChar(1000)
+  createdById  String    @db.Uuid
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  resolvedAt   DateTime? @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, createdAt])
+  @@map("tournament_notices")
 }

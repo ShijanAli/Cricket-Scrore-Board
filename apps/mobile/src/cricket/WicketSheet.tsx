@@ -7,7 +7,7 @@ import {
   type WicketType,
 } from '@cricket/shared';
 import { BottomSheet, Button, Chip, NumberStepper, Segmented, Text } from '@/ui';
-import type { Intent } from '@/features/scoring/intents';
+import type { Intent } from '@cricket/client-core';
 import type { PickablePlayer } from './PlayerPicker';
 
 const LABEL: Record<WicketType, string> = {

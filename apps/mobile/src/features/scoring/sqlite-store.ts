@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { ballEventSchema, type BallEvent } from '@cricket/shared';
-import type { LocalEventStore, StoredEvent } from './store';
+import type { LocalEventStore, StoredEvent } from '@cricket/client-core';
 
 const SCHEMA_VERSION = 1;
 

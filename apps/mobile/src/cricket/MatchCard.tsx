@@ -1,7 +1,6 @@
 import { StyleSheet, View } from 'react-native';
-import type { MatchSummary } from '@/api/types';
+import { isFinished, statusLabel, statusTone, type MatchSummary } from '@cricket/client-core';
 import { Badge, Card, TeamBadge, Text, space } from '@/ui';
-import { isFinished, statusLabel, statusTone } from './match-utils';
 
 export function MatchCard({ match, onPress }: { match: MatchSummary; onPress: () => void }) {
   const a = match.teamA;

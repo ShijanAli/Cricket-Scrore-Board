@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import type { MatchDetail } from '@/api/types';
-import { inningsSides, teamName, xiOf } from '@/cricket/match-utils';
+import { inningsSides, teamName, xiOf, type MatchDetail } from '@cricket/client-core';
 import { useMatch, useStartInnings } from '@/hooks/queries';
 import { errorMessage } from '@/lib/query';
 import { Button, Chip, ErrorBanner, QueryBoundary, Screen, Text } from '@/ui';

@@ -1,3 +1,4 @@
+import { tournamentBadge } from '@/cricket/tournamentStatus';
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +25,7 @@ export default function EventsTab() {
                   <Card key={t.id} onPress={() => router.push(`/tournament/${t.id}`)} style={{ gap: 4 }}>
                     <Text variant="label">{t.name}</Text>
                     <Text variant="muted">{t._count.teams}/{t.teamCount} teams · {t._count.matches} matches</Text>
-                    <Badge label={t.status === 'draft' ? 'Setting up' : t.status === 'live' ? 'In progress' : 'Completed'} tone={t.status === 'live' ? 'live' : t.status === 'completed' ? 'success' : 'neutral'} />
+                    <Badge {...tournamentBadge(t.status)} />
                   </Card>
                 ))
               }

@@ -106,6 +106,7 @@ export const TOURNAMENT_FORMATS = defineEnum([
   'league_final',
   'league_semi_final',
   'knockout',
+  'groups_knockout',
 ] as const);
 export type TournamentFormat = (typeof TOURNAMENT_FORMATS.values)[number];
 
