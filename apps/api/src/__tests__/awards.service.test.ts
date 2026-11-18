@@ -56,9 +56,15 @@ describe('series awards', () => {
     const { series, teamA, p1 } = seed();
     const a = await svc.getSeriesAwards(series.id);
     expect(a.matchesCounted).toBe(2);
-    expect(a.champion).toEqual({ id: teamA.id, name: 'Alpha' });
+    expect(a.champion).toMatchObject({ id: teamA.id, name: 'Alpha' });
     expect(a.runnerUp?.name).toBe('Beta');
-    expect(a.manOfTheSeries).toMatchObject({ playerId: p1.id, name: 'Rahim', teamName: 'Alpha', runs: 120, matches: 2 });
+    expect(a.bestPlayerTitle).toBe('Man of the Series');
+    expect(a.bestPlayer).toMatchObject({ playerId: p1.id, name: 'Rahim', teamName: 'Alpha', runs: 120, matches: 2 });
+    expect(a.bestPlayer?.reason).toContain('Rahim (Alpha) is Man of the Series: 120 runs');
+    expect(a.bestPlayer?.reason).toContain('over 2 matches');
+    expect(a.champion?.reason).toBe('Won the series 2-0.');
+    expect(a.mostSixes?.name).toBe('Rahim');
+    expect(a.formula).toContain('1 per run');
     expect(a.topRunScorer?.name).toBe('Rahim');
     expect(a.topWicketTaker).toBeNull();
   });

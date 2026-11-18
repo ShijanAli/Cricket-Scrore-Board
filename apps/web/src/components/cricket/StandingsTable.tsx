@@ -4,7 +4,8 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TeamBadge } from '@/components/common/TeamBadge';
 
-export function StandingsTable({ rows }: { rows: readonly StandingRowDto[] }) {
+/** `qualifyCount`: the top rows go through to the knockout (group stage). */
+export function StandingsTable({ rows, qualifyCount = 0 }: { rows: readonly StandingRowDto[]; qualifyCount?: number }) {
   return (
     <Card className="py-2">
       <Table>
@@ -23,7 +24,7 @@ export function StandingsTable({ rows }: { rows: readonly StandingRowDto[] }) {
         </TableHeader>
         <TableBody>
           {rows.map((r) => (
-            <TableRow key={r.teamId}>
+            <TableRow key={r.teamId} className={r.rank <= qualifyCount ? 'bg-primary/5' : undefined}>
               <TableCell className="pl-4 text-muted-foreground tabular-nums">{r.rank}</TableCell>
               <TableCell>
                 <span className="flex items-center gap-2 font-medium">

@@ -1,17 +1,21 @@
 import type { TournamentFormat } from '@cricket/shared';
 import { EngineError } from '../errors';
+import { groupsKnockoutFixtures, type Group } from './groups';
 
 export type FixtureSource =
   | { kind: 'team'; teamId: string }
   | { kind: 'standing'; position: number }
-  | { kind: 'winnerOf'; matchNo: number };
+  | { kind: 'winnerOf'; matchNo: number }
+  /** Finishing place inside a group (group stage + knockout format). */
+  | { kind: 'groupPosition'; group: string; position: number };
 
 export type FixtureStage =
   | 'league'
   | 'quarter_final'
   | 'semi_final'
   | 'final'
-  | `round_of_${number}`;
+  | `round_of_${number}`
+  | `group_${string}`;
 
 export interface FixtureDraft {
   matchNo: number;
@@ -124,6 +128,8 @@ export function knockoutFixtures(teamIds: readonly string[]): FixtureDraft[] {
 
 export interface FixtureOptions {
   doubleRoundRobin?: boolean;
+  /** Group stage format: the draw (see drawGroups). */
+  groups?: readonly Group[];
 }
 
 export function generateFixtures(
@@ -132,6 +138,10 @@ export function generateFixtures(
   options: FixtureOptions = {},
 ): FixtureDraft[] {
   if (format === 'knockout') return knockoutFixtures(teamIds);
+  if (format === 'groups_knockout') {
+    if (!options.groups) throw new EngineError('INVALID_TEAM_COUNT', 'Groups are required for this format');
+    return groupsKnockoutFixtures(options.groups, options.doubleRoundRobin ?? false);
+  }
 
   const league = leagueFixtures(teamIds, options.doubleRoundRobin ?? false);
   if (format === 'league') return league;

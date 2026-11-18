@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
+import { GROUP_COUNTS, SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
 import { useCreateTournament } from '@/hooks/queries';
-import { buildTournamentInput, defaultDraft, type TournamentDraft } from '@cricket/client-core';
+import { buildTournamentInput, defaultDraft, describeGroupPlan, type TournamentDraft } from '@cricket/client-core';
 import { errorMessage } from '@/lib/query';
 import { Button, Chip, ErrorBanner, NumberStepper, Screen, Segmented, Text, TextField, space } from '@/ui';
 
@@ -12,6 +12,7 @@ const FORMAT_LABEL: Record<TournamentFormat, string> = {
   league_final: 'League + Final',
   league_semi_final: 'League + Semi-finals',
   knockout: 'Knockout',
+  groups_knockout: 'Groups + Knockout',
 };
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -37,7 +38,14 @@ export default function NewTournament() {
 
       <Text variant="label">Format</Text>
       <Segmented options={TOURNAMENT_FORMATS.values.map((f) => ({ value: f, label: FORMAT_LABEL[f] }))} value={d.format} onChange={(v) => set('format', v)} />
+      {d.format === 'groups_knockout' ? (
+        <>
+          <Segmented options={GROUP_COUNTS.map((n) => ({ value: n, label: `${n} groups` }))} value={d.groupCount} onChange={(v) => set('groupCount', v)} />
+          <Text variant="muted">{describeGroupPlan(d.teamCount, d.groupCount)}</Text>
+        </>
+      ) : null}
       <NumberStepper label="Number of teams" value={d.teamCount} min={2} max={32} onChange={(v) => set('teamCount', v)} />
+      {errors.groupCount ? <Text variant="error">{errors.groupCount}</Text> : null}
       {errors.teamCount ? <Text variant="error">{errors.teamCount}</Text> : null}
       {d.format !== 'knockout' ? (
         <Chip label={d.doubleRoundRobin ? '✓ Everyone plays twice (home & away)' : 'Everyone plays once'} selected={d.doubleRoundRobin} onPress={() => set('doubleRoundRobin', !d.doubleRoundRobin)} />

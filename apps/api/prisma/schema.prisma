@@ -88,6 +88,7 @@ enum TournamentFormat {
   league_final
   league_semi_final
   knockout
+  groups_knockout
 }
 
 enum TournamentStatus {
@@ -241,6 +242,10 @@ model Tournament {
   name             String           @db.VarChar(80)
   format           TournamentFormat
   teamCount        Int
+  /**
+   * groups_knockout only: 2, 4 or 8 groups. Top two of each group go through.
+   */
+  groupCount       Int?
   doubleRoundRobin Boolean          @default(false)
   scheduleMode     ScheduleMode     @default(auto)
   status           TournamentStatus @default(draft)
@@ -298,6 +303,10 @@ model TournamentTeam {
    * Seed, used for knockout brackets. 1 = top seed.
    */
   seed         Int?
+  /**
+   * groups_knockout only: "A", "B", ... Set before fixtures are generated.
+   */
+  groupName    String?  @db.VarChar(2)
   entryFeePaid Boolean  @default(false)
   createdAt    DateTime @default(now()) @db.Timestamptz
 
@@ -350,7 +359,7 @@ model Match {
    */
   matchNo   Int?
   /**
-   * league | quarter_final | semi_final | final | round_of_N
+   * league | group_A.. | quarter_final | semi_final | final | round_of_N
    */
   stage     String? @db.VarChar(20)
   round     Int?

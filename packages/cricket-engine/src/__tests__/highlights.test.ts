@@ -144,3 +144,34 @@ describe('awards and report', () => {
     expect(pickBestPlayer([])).toBeNull();
   });
 });
+
+import { explainAward, mostSixes, rankImpacts, type PlayerImpact } from '../match/awards';
+
+describe('award explanations', () => {
+  const p = (o: Partial<PlayerImpact>): PlayerImpact => ({
+    playerId: 'x', teamId: 'A', runs: 0, balls: 0, fours: 0, sixes: 0, wickets: 0, ballsBowled: 0, runsConceded: 0, maidens: 0, points: 0, ...o,
+  });
+  const nameOf = (id: string) => ({ a: 'Rahim', b: 'Karim' })[id] ?? id;
+
+  it('says what they did and by how much they won it', () => {
+    const a = p({ playerId: 'a', runs: 52, balls: 31, fours: 4, sixes: 2, wickets: 2, runsConceded: 18, points: 96 });
+    const b = p({ playerId: 'b', teamId: 'B', runs: 40, points: 78 });
+    const text = explainAward({ title: 'Man of the Match', winner: a, winnerName: 'Rahim', teamName: 'Alpha', ranked: rankImpacts([b, a]), nameOf });
+    expect(text).toBe(
+      'Rahim (Alpha) is Man of the Match: 52 runs (31 balls, 4 fours, 2 sixes) and 2 wickets for 18. 96 impact points, 18 more than Karim (78).',
+    );
+  });
+
+  it('explains a tie-break and a multi-match total', () => {
+    const a = p({ playerId: 'a', runs: 100, points: 100 });
+    const b = p({ playerId: 'b', teamId: 'B', runs: 90, points: 100 });
+    const text = explainAward({ title: 'Man of the Series', winner: a, winnerName: 'Rahim', teamName: 'Alpha', ranked: rankImpacts([a, b]), nameOf, matches: 3 });
+    expect(text).toContain('over 3 matches');
+    expect(text).toContain('Level on points with Karim');
+  });
+
+  it('most sixes', () => {
+    expect(mostSixes([p({ playerId: 'a', sixes: 3 }), p({ playerId: 'b', sixes: 5 })])?.playerId).toBe('b');
+    expect(mostSixes([p({})])).toBeNull();
+  });
+});

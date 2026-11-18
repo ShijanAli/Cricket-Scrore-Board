@@ -11,6 +11,8 @@ export interface TournamentDraft {
   name: string;
   format: TournamentFormat;
   teamCount: number;
+  /** Group stage format: 2, 4 or 8. */
+  groupCount: number;
   doubleRoundRobin: boolean;
   scheduleMode: ScheduleMode;
   startDate: string;
@@ -28,6 +30,7 @@ export const defaultDraft: TournamentDraft = {
   name: '',
   format: 'league_final',
   teamCount: 4,
+  groupCount: 4,
   doubleRoundRobin: false,
   scheduleMode: 'auto',
   startDate: '',
@@ -52,6 +55,7 @@ export function buildTournamentInput(d: TournamentDraft): BuildResult {
     name: d.name,
     format: d.format,
     teamCount: d.teamCount,
+    groupCount: d.format === 'groups_knockout' ? d.groupCount : undefined,
     doubleRoundRobin: d.doubleRoundRobin,
     scheduleMode: d.scheduleMode,
     scheduler: auto
@@ -78,4 +82,17 @@ export function buildTournamentInput(d: TournamentDraft): BuildResult {
     errors[key] ??= issue.message;
   }
   return { ok: false, errors };
+}
+
+const KO_NAME: Record<number, string> = { 2: 'Final', 4: 'Semi-finals', 8: 'Quarter-finals', 16: 'Round of 16' };
+
+/** One-line plan shown under the group picker: "16 teams → 4 groups of 4 → top 2 each → Quarter-finals → Semi-finals → Final". */
+export function describeGroupPlan(teamCount: number, groupCount: number): string {
+  const base = Math.floor(teamCount / groupCount);
+  const extra = teamCount % groupCount;
+  const size = extra === 0 ? `${base} each` : `${base} or ${base + 1} teams`;
+  const qualifiers = groupCount * 2;
+  const stages: string[] = [];
+  for (let n = qualifiers; n >= 2; n /= 2) stages.push(KO_NAME[n] ?? `Round of ${n}`);
+  return `${teamCount} teams → ${groupCount} groups (${size}) → top 2 of each group (${qualifiers} teams) → ${stages.join(' → ')} → Champion`;
 }

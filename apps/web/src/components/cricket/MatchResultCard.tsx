@@ -52,6 +52,12 @@ export function MatchResultCard({ match }: { match: MatchDetail }) {
                 <p className="font-semibold">{a.playerName}</p>
                 <p className="text-xs text-muted-foreground">{a.teamName}</p>
                 <p className="mt-1 text-sm tabular-nums">{a.line}</p>
+                {a.reason ? (
+                  <details className="mt-2 text-xs text-muted-foreground">
+                    <summary className="cursor-pointer font-medium text-foreground">Why?</summary>
+                    <p className="mt-1">{a.reason}</p>
+                  </details>
+                ) : null}
               </div>
             ))}
           </div>

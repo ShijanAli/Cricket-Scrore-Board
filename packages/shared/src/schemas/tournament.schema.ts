@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { SCHEDULE_MODES, TOURNAMENT_FORMATS } from '../constants/enums';
 import { matchRulesSchema } from './rules.schema';
 
+/** Allowed numbers of groups: the top two of each go on to a clean 4, 8 or 16 team knockout. */
+export const GROUP_COUNTS = [2, 4, 8] as const;
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD');
 const time24 = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'HH:mm');
 
@@ -41,6 +44,8 @@ export const createTournamentSchema = z
     name: z.string().trim().min(3).max(80),
     format: TOURNAMENT_FORMATS.schema,
     teamCount: z.number().int().min(2).max(32),
+    /** Group stage formats only: 2, 4 or 8 groups. The top two of each group go through. */
+    groupCount: z.number().int().optional(),
     doubleRoundRobin: z.boolean().default(false),
     scheduleMode: SCHEDULE_MODES.schema.default('auto'),
     scheduler: schedulerConfigSchema.optional(),
@@ -51,6 +56,13 @@ export const createTournamentSchema = z
   .superRefine((t, ctx) => {
     if (t.format === 'league_semi_final' && t.teamCount < 4) {
       ctx.addIssue({ code: 'custom', path: ['teamCount'], message: 'Semi-finals need 4+ teams' });
+    }
+    if (t.format === 'groups_knockout') {
+      if (t.groupCount === undefined || !GROUP_COUNTS.includes(t.groupCount as (typeof GROUP_COUNTS)[number])) {
+        ctx.addIssue({ code: 'custom', path: ['groupCount'], message: 'Choose 2, 4 or 8 groups' });
+      } else if (t.teamCount < t.groupCount * 2) {
+        ctx.addIssue({ code: 'custom', path: ['teamCount'], message: `Need at least ${t.groupCount * 2} teams for ${t.groupCount} groups` });
+      }
     }
     if (t.scheduleMode === 'auto' && !t.scheduler) {
       ctx.addIssue({ code: 'custom', path: ['scheduler'], message: 'Auto schedule needs scheduler config' });

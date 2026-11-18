@@ -1,4 +1,4 @@
-import { buildMatchReport, oversFromBalls, strikeRate, type PlayerImpact } from '@cricket/engine';
+import { buildMatchReport, explainAward, oversFromBalls, rankImpacts, strikeRate, type PlayerImpact } from '@cricket/engine';
 import type { MatchDetail } from '../api/types';
 import { teamName } from './match-utils';
 
@@ -17,6 +17,8 @@ export interface ReportAward {
   teamName: string;
   /** "52 (31) · 4×4 2×6 · 3/18" */
   line: string;
+  /** Why they got it, in plain words. */
+  reason?: string;
 }
 
 export interface MatchReportView {
@@ -68,14 +70,23 @@ export function buildReportView(match: MatchDetail): MatchReportView | null {
   const l = byId(report.loserTeamId);
 
   const awards: ReportAward[] = [];
-  const add = (label: string, p: PlayerImpact | null, text: (p: PlayerImpact) => string) => {
+  const add = (label: string, p: PlayerImpact | null, text: (p: PlayerImpact) => string, reason?: (p: PlayerImpact) => string) => {
     if (!p) return;
-    awards.push({ label, playerName: playerName(p.playerId), teamName: teamName(match, p.teamId), line: text(p) });
+    awards.push({ label, playerName: playerName(p.playerId), teamName: teamName(match, p.teamId), line: text(p), reason: reason?.(p) });
   };
   add('Man of the Match', report.manOfTheMatch, (p) =>
     [p.balls > 0 || p.runs > 0 ? `${p.runs} (${p.balls})` : null, p.ballsBowled > 0 ? bowlingLine(p, first.ballsPerOver) : null]
       .filter(Boolean)
       .join(' · '),
+    (p) =>
+      explainAward({
+        title: 'Man of the Match',
+        winner: p,
+        winnerName: playerName(p.playerId),
+        teamName: teamName(match, p.teamId),
+        ranked: rankImpacts(report.impacts, report.winnerTeamId),
+        nameOf: playerName,
+      }),
   );
   add('Top Scorer', report.topBatter, battingLine);
   add('Best Bowler', report.topBowler, (p) => bowlingLine(p, first.ballsPerOver));

@@ -11,6 +11,9 @@ import * as tournaments from './tournaments.service';
 
 const addTeamSchema = z.object({ teamId: uuidSchema, seed: z.number().int().min(1).max(64).optional() });
 const addScorerSchema = z.object({ email: z.string().trim().toLowerCase().email() });
+const groupsSchema = z.object({
+  assignments: z.array(z.object({ teamId: uuidSchema, group: z.string().regex(/^[A-H]$/).nullable() })).min(1).max(64),
+});
 const teamParams = z.object({ id: uuidSchema, teamId: uuidSchema });
 
 export const tournamentsRouter = Router();
@@ -58,6 +61,17 @@ tournamentsRouter.post(
   asyncHandler(async (req, res) => {
     const { teamId, seed } = req.body as z.infer<typeof addTeamSchema>;
     res.status(201).json({ entry: await tournaments.addTeam(req.params.id!, uid(req), teamId, seed) });
+  }),
+);
+
+tournamentsRouter.put(
+  '/:id/groups',
+  requireAuth,
+  validate(idParams, 'params'),
+  validate(groupsSchema),
+  asyncHandler(async (req, res) => {
+    const { assignments } = req.body as z.infer<typeof groupsSchema>;
+    res.json({ teams: await tournaments.setGroups(req.params.id!, uid(req), assignments) });
   }),
 );
 

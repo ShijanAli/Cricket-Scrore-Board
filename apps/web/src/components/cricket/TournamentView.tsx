@@ -1,4 +1,4 @@
-import { groupByStage } from '@cricket/client-core';
+import { groupByStage, groupStandings } from '@cricket/client-core';
 import { EmptyState } from '@/components/common/EmptyState';
 import { QueryBoundary } from '@/components/common/QueryBoundary';
 import { useGetFixturesQuery, useGetStandingsQuery } from '@/features/tournaments/tournamentsApi';
@@ -33,7 +33,20 @@ export function StandingsView({ id }: { id: string }) {
   const standings = useGetStandingsQuery(id);
   return (
     <QueryBoundary query={standings} isEmpty={(d) => d.length === 0} empty={<EmptyState title="No table yet" hint="The table appears once teams are added." />}>
-      {(rows) => <StandingsTable rows={rows} />}
+      {(rows) => (
+        <div className="space-y-6">
+          {groupStandings(rows).map((g) => (
+            <section key={g.label} className="space-y-2">
+              {g.group ? (
+                <h3 className="flex items-baseline gap-2 font-semibold">
+                  {g.label} <span className="text-xs font-normal text-muted-foreground">top 2 go through</span>
+                </h3>
+              ) : null}
+              <StandingsTable rows={g.rows} qualifyCount={g.group ? 2 : 0} />
+            </section>
+          ))}
+        </div>
+      )}
     </QueryBoundary>
   );
 }

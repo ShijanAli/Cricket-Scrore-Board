@@ -42,6 +42,7 @@ export function MatchResultCard({ match }: { match: MatchDetail }) {
             {a.playerName} · {a.teamName}
           </Text>
           <Text variant="body">{a.line}</Text>
+          {a.reason ? <Text variant="muted">{a.reason}</Text> : null}
         </View>
       ))}
     </Card>

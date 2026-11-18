@@ -9,14 +9,15 @@ const C = ({ children, head, wide, bold }: { children: React.ReactNode; head?: b
   </Text>
 );
 
-export function StandingsTable({ rows }: { rows: readonly StandingRowDto[] }) {
+/** `qualifyCount`: the top rows go through to the knockout (group stage). */
+export function StandingsTable({ rows, qualifyCount = 0 }: { rows: readonly StandingRowDto[]; qualifyCount?: number }) {
   return (
     <Card style={{ gap: space.sm }}>
       <View style={styles.row}>
         <C head>#</C><C head wide>Team</C><C head>P</C><C head>W</C><C head>L</C><C head>T</C><C head>NR</C><C head>Pts</C><C head wide>NRR</C>
       </View>
       {rows.map((r) => (
-        <View key={r.teamId} style={styles.row}>
+        <View key={r.teamId} style={[styles.row, r.rank <= qualifyCount && { backgroundColor: colors.primarySoft, borderRadius: 6 }]}>
           <C>{r.rank}</C>
           <C wide>{r.team?.shortName ?? r.team?.name ?? '?'}</C>
           <C>{r.played}</C><C>{r.won}</C><C>{r.lost}</C><C>{r.tied}</C><C>{r.noResult}</C>

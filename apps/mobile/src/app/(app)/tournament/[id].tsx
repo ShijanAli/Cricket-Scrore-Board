@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { groupByStage, type TournamentDetail } from '@cricket/client-core';
+import { groupByStage, groupStandings, type TournamentDetail } from '@cricket/client-core';
 import { AwardsCard } from '@/cricket/AwardsCard';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { StandingsTable } from '@/cricket/StandingsTable';
@@ -49,9 +49,13 @@ function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolea
         <Card key={e.teamId} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           <TeamBadge shortName={e.team.shortName} color={e.team.color} />
           <Text variant="label" style={{ flex: 1 }}>{e.team.name}</Text>
+          {e.groupName ? <Badge label={`Group ${e.groupName}`} /> : null}
           {canManage && draft ? <Button title="Remove" variant="ghost" compact onPress={() => remove.mutate(e.teamId)} /> : null}
         </Card>
       ))}
+      {t.format === 'groups_knockout' && draft ? (
+        <Text variant="muted">Groups are drawn automatically by seed when you create fixtures. The top 2 of each group go to the knockout.</Text>
+      ) : null}
       {remove.isError ? <ErrorBanner message={errorMessage(remove.error)} /> : null}
 
       {canManage && draft && !full ? (
@@ -106,7 +110,20 @@ function TableSection({ id }: { id: string }) {
   const standings = useStandings(id);
   return (
     <QueryBoundary query={standings} isEmpty={(d) => d.length === 0} empty={<EmptyState title="No table yet" hint="The table appears once teams are added." />}>
-      {(rows) => <StandingsTable rows={rows} />}
+      {(rows) => (
+        <>
+          {groupStandings(rows).map((g) => (
+            <View key={g.label} style={{ gap: space.sm }}>
+              {g.group ? (
+                <Text variant="title">
+                  {g.label} <Text variant="muted">· top 2 go through</Text>
+                </Text>
+              ) : null}
+              <StandingsTable rows={g.rows} qualifyCount={g.group ? 2 : 0} />
+            </View>
+          ))}
+        </>
+      )}
     </QueryBoundary>
   );
 }

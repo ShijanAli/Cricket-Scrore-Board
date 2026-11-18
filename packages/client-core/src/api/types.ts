@@ -117,7 +117,8 @@ export interface MatchSummary {
 export type FixtureSource =
   | { kind: 'team'; teamId: string }
   | { kind: 'standing'; position: number }
-  | { kind: 'winnerOf'; matchNo: number };
+  | { kind: 'winnerOf'; matchNo: number }
+  | { kind: 'groupPosition'; group: string; position: number };
 
 export interface MatchDetail extends MatchSummary {
   players: MatchPlayerRow[];
@@ -166,6 +167,8 @@ export interface TournamentEntry {
   tournamentId: string;
   teamId: string;
   seed: number | null;
+  /** Group stage format only: "A", "B", ... */
+  groupName?: string | null;
   team: Team;
 }
 
@@ -181,6 +184,8 @@ export interface TournamentDetail {
   name: string;
   format: TournamentFormat;
   teamCount: number;
+  /** Group stage format only. */
+  groupCount?: number | null;
   doubleRoundRobin: boolean;
   scheduleMode: ScheduleMode;
   status: TournamentStatus;
@@ -199,6 +204,8 @@ export interface StandingRowDto {
   points: number;
   nrr: number;
   rank: number;
+  /** Group stage format: the group this row belongs to. */
+  group?: string | null;
   team: Team | null;
 }
 
@@ -234,13 +241,26 @@ export interface AwardPlayer {
   ballsBowled: number;
   runsConceded: number;
   points: number;
+  /** Plain-language reason this player got the award. */
+  reason: string;
+}
+
+export interface AwardTeam {
+  id: string;
+  name: string;
+  reason?: string;
 }
 
 export interface SeriesAwards {
   matchesCounted: number;
-  champion: { id: string; name: string } | null;
-  runnerUp: { id: string; name: string } | null;
-  manOfTheSeries: AwardPlayer | null;
+  champion: AwardTeam | null;
+  runnerUp: AwardTeam | null;
+  /** "Man of the Series" or "Man of the Tournament" */
+  bestPlayerTitle: string;
+  bestPlayer: AwardPlayer | null;
   topRunScorer: AwardPlayer | null;
   topWicketTaker: AwardPlayer | null;
+  mostSixes: AwardPlayer | null;
+  /** How the best player is chosen. */
+  formula: string;
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { buildTournamentInput, defaultDraft, type TournamentDraft } from '@cricket/client-core';
-import { SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
+import { buildTournamentInput, defaultDraft, describeGroupPlan, type TournamentDraft } from '@cricket/client-core';
+import { GROUP_COUNTS, SCHEDULE_MODES, TOURNAMENT_FORMATS, type TournamentFormat } from '@cricket/shared';
 import { useNavigate } from 'react-router-dom';
 import { ChoiceGroup, MultiChoiceGroup } from '@/components/common/ChoiceGroup';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -19,6 +19,7 @@ const FORMAT_LABEL: Record<TournamentFormat, string> = {
   league_final: 'League + Final',
   league_semi_final: 'League + Semi-finals',
   knockout: 'Knockout',
+  groups_knockout: 'Groups + Knockout (World Cup style)',
 };
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -62,6 +63,15 @@ export function NewTournamentPage() {
               <Label>Format</Label>
               <ChoiceGroup label="Format" options={TOURNAMENT_FORMATS.values.map((f) => ({ value: f, label: FORMAT_LABEL[f] }))} value={d.format} onChange={(v) => set('format', v)} />
             </div>
+
+            {d.format === 'groups_knockout' ? (
+              <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
+                <Label>Number of groups</Label>
+                <ChoiceGroup label="Number of groups" options={GROUP_COUNTS.map((n) => ({ value: n, label: `${n} groups` }))} value={d.groupCount} onChange={(v) => set('groupCount', v)} />
+                <p className="text-sm text-muted-foreground">{describeGroupPlan(d.teamCount, d.groupCount)}</p>
+                {errors.groupCount ? <p role="alert" className="text-xs text-destructive">{errors.groupCount}</p> : null}
+              </div>
+            ) : null}
 
             <div className="grid gap-6 sm:grid-cols-3">
               <div>

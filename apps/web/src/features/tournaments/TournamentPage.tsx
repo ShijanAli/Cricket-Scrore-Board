@@ -23,6 +23,7 @@ import {
   useGenerateFixturesMutation,
   useGetTournamentQuery,
   useRemoveTournamentTeamMutation,
+  useSetGroupsMutation,
 } from './tournamentsApi';
 
 const STATUS_LABEL = { draft: 'Setting up', live: 'In progress', completed: 'Completed' } as const;
@@ -34,6 +35,9 @@ function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolea
   const [removeTeam, remove] = useRemoveTournamentTeamMutation();
   const [addScorer, scorer] = useAddTournamentScorerMutation();
   const [generate, gen] = useGenerateFixturesMutation();
+  const [setGroups, grp] = useSetGroupsMutation();
+  const grouped = t.format === 'groups_knockout';
+  const letters = Array.from({ length: t.groupCount ?? 0 }, (_, i) => String.fromCharCode(65 + i));
   const [email, setEmail] = useState('');
   const [added, setAdded] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -53,6 +57,24 @@ function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolea
             <CardContent className="flex items-center gap-3">
               <TeamBadge shortName={e.team.shortName} color={e.team.color} />
               <span className="min-w-0 flex-1 truncate font-medium">{e.team.name}</span>
+              {grouped && canManage && draft ? (
+                <select
+                  aria-label={`Group for ${e.team.name}`}
+                  className="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={e.groupName ?? ''}
+                  disabled={grp.isLoading}
+                  onChange={(ev) => void setGroups({ id: t.id, assignments: [{ teamId: e.teamId, group: ev.target.value || null }] })}
+                >
+                  <option value="">Auto</option>
+                  {letters.map((l) => (
+                    <option key={l} value={l}>
+                      Group {l}
+                    </option>
+                  ))}
+                </select>
+              ) : grouped && e.groupName ? (
+                <Badge variant="outline">Group {e.groupName}</Badge>
+              ) : null}
               {canManage && draft ? (
                 <Button variant="ghost" size="sm" disabled={remove.isLoading} onClick={() => void removeTeam({ id: t.id, teamId: e.teamId })}>
                   Remove
@@ -62,6 +84,12 @@ function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolea
           </Card>
         ))}
       </div>
+      {grouped && canManage && draft ? (
+        <p className="text-sm text-muted-foreground">
+          Pick a group for every team yourself, or leave all on Auto and the app will draw the groups by seed so each group gets a similar mix of strong and weak teams.
+        </p>
+      ) : null}
+      {grp.isError ? <ErrorState message={errorMessage(grp.error)} /> : null}
       {remove.isError ? <ErrorState message={errorMessage(remove.error)} /> : null}
 
       {canManage && draft && !full ? (

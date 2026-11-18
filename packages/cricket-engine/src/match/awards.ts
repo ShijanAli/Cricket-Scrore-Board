@@ -83,19 +83,27 @@ export function mergeImpacts(lists: readonly (readonly PlayerImpact[])[]): Playe
   return [...map.values()];
 }
 
+/** Best first: points, then winning side, then more runs, then more wickets. */
+export function rankImpacts(impacts: readonly PlayerImpact[], winnerTeamId: string | null = null): PlayerImpact[] {
+  return impacts
+    .filter((p) => p.points > 0)
+    .sort(
+      (a, b) =>
+        b.points - a.points ||
+        Number(b.teamId === winnerTeamId) - Number(a.teamId === winnerTeamId) ||
+        b.runs - a.runs ||
+        b.wickets - a.wickets ||
+        a.playerId.localeCompare(b.playerId),
+    );
+}
+
 /** Highest points; ties go to the winning side, then more runs, then more wickets. */
 export function pickBestPlayer(impacts: readonly PlayerImpact[], winnerTeamId: string | null = null): PlayerImpact | null {
-  const eligible = impacts.filter((p) => p.points > 0);
-  if (eligible.length === 0) return null;
-  return [...eligible].sort(
-    (a, b) =>
-      b.points - a.points ||
-      Number(b.teamId === winnerTeamId) - Number(a.teamId === winnerTeamId) ||
-      b.runs - a.runs ||
-      b.wickets - a.wickets ||
-      a.playerId.localeCompare(b.playerId),
-  )[0]!;
+  return rankImpacts(impacts, winnerTeamId)[0] ?? null;
 }
+
+export const mostSixes = (impacts: readonly PlayerImpact[]): PlayerImpact | null =>
+  [...impacts].filter((p) => p.sixes > 0).sort((a, b) => b.sixes - a.sixes || b.runs - a.runs || a.playerId.localeCompare(b.playerId))[0] ?? null;
 
 export const topRunScorer = (impacts: readonly PlayerImpact[]): PlayerImpact | null =>
   [...impacts].filter((p) => p.runs > 0).sort((a, b) => b.runs - a.runs || a.balls - b.balls || a.playerId.localeCompare(b.playerId))[0] ?? null;
@@ -104,3 +112,63 @@ export const topWicketTaker = (impacts: readonly PlayerImpact[]): PlayerImpact |
   [...impacts]
     .filter((p) => p.wickets > 0)
     .sort((a, b) => b.wickets - a.wickets || a.runsConceded - b.runsConceded || a.playerId.localeCompare(b.playerId))[0] ?? null;
+
+/** Shown next to every "Man of the ..." so the rule is never a mystery. */
+export const IMPACT_FORMULA =
+  'Impact points: 1 per run, +1 per four, +2 per six, +10 for every 50 runs, +25 per wicket, +8 per maiden over, +10 for 3 wickets or +20 for 5 wickets in an innings.';
+
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : w.endsWith('x') ? 'es' : 's'}`;
+
+/** What a player did, in words: "52 runs (31 balls, 4 fours, 2 sixes) and 2 wickets for 18". */
+export function describePerformance(p: PlayerImpact, matches?: number): string {
+  const parts: string[] = [];
+  if (p.runs > 0 || p.balls > 0) {
+    const detail = [p.balls > 0 ? plural(p.balls, 'ball') : null, p.fours > 0 ? plural(p.fours, 'four') : null, p.sixes > 0 ? plural(p.sixes, 'six') : null]
+      .filter(Boolean)
+      .join(', ');
+    parts.push(`${plural(p.runs, 'run')}${detail ? ` (${detail})` : ''}`);
+  }
+  if (p.wickets > 0) parts.push(`${plural(p.wickets, 'wicket')} for ${p.runsConceded}`);
+  if (p.maidens > 0) parts.push(plural(p.maidens, 'maiden'));
+  const text = parts.join(' and ') || 'a useful all-round contribution';
+  return matches && matches > 1 ? `${text} over ${matches} matches` : text;
+}
+
+export interface AwardExplanationInput {
+  /** "Man of the Match", "Man of the Series", "Man of the Tournament" */
+  title: string;
+  winner: PlayerImpact;
+  winnerName: string;
+  teamName: string;
+  /** Everyone, best first (rankImpacts). */
+  ranked: readonly PlayerImpact[];
+  nameOf: (playerId: string) => string;
+  matches?: number;
+}
+
+/**
+ * Plain-language reason, e.g. "Rahim (Alpha) is Man of the Match: 52 runs (31 balls, 4 fours) and
+ * 2 wickets for 18. 96 impact points, 18 more than Karim (78)."
+ */
+export function explainAward(i: AwardExplanationInput): string {
+  const second = i.ranked.find((p) => p.playerId !== i.winner.playerId);
+  const margin = second
+    ? i.winner.points === second.points
+      ? ` Level on points with ${i.nameOf(second.playerId)}; the tie was settled by the winning side, then runs, then wickets.`
+      : ` ${i.winner.points} impact points, ${i.winner.points - second.points} more than ${i.nameOf(second.playerId)} (${second.points}).`
+    : ` ${i.winner.points} impact points.`;
+  return `${i.winnerName} (${i.teamName}) is ${i.title}: ${describePerformance(i.winner, i.matches)}.${margin}`;
+}
+
+export function explainTopScorer(p: PlayerImpact, name: string, matches?: number): string {
+  const sr = p.balls > 0 ? ` at a strike rate of ${((p.runs / p.balls) * 100).toFixed(1)}` : '';
+  return `${name} scored the most runs: ${plural(p.runs, 'run')}${matches && matches > 1 ? ` in ${plural(matches, 'match')}` : ''}${sr}.`;
+}
+
+export function explainTopWicketTaker(p: PlayerImpact, name: string, matches?: number): string {
+  return `${name} took the most wickets: ${plural(p.wickets, 'wicket')} for ${p.runsConceded} runs${matches && matches > 1 ? ` in ${plural(matches, 'match')}` : ''}. Fewer runs conceded breaks a tie.`;
+}
+
+export function explainMostSixes(p: PlayerImpact, name: string): string {
+  return `${name} hit the most sixes: ${p.sixes}.`;
+}

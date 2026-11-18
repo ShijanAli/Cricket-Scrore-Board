@@ -6,6 +6,7 @@ export { replayInnings, activeEvents, canUndo } from './innings/replay';
 export * from './match/result';
 export * from './tournament/dates';
 export * from './tournament/fixtures';
+export * from './tournament/groups';
 export * from './tournament/scheduler';
 export * from './tournament/standings';
 export * from './match/highlights';

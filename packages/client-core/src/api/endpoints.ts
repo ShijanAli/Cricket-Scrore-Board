@@ -74,6 +74,8 @@ export function createApi(c: ApiClient) {
         c.post<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`).then((r) => r.fixtures),
       fixtures: (id: string) =>
         c.get<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`, { auth: false }).then((r) => r.fixtures),
+      setGroups: (id: string, assignments: { teamId: string; group: string | null }[]) =>
+        c.put<{ teams: TournamentEntry[] }>(`/tournaments/${id}/groups`, { assignments }).then((r) => r.teams),
       awards: (id: string) => c.get<{ awards: SeriesAwards }>(`/tournaments/${id}/awards`, { auth: false }).then((r) => r.awards),
       standings: (id: string) =>
         c.get<{ standings: StandingRowDto[] }>(`/tournaments/${id}/standings`, { auth: false }).then((r) => r.standings),
