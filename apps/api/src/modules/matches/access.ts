@@ -1,5 +1,5 @@
 import { prisma } from '../../db/prisma';
-import { forbidden, notFound } from '../../lib/errors';
+import { conflict, forbidden, notFound } from '../../lib/errors';
 
 /** Owner of the match, or an organiser/scorer of its tournament, can manage and score it. */
 export async function assertCanScore(matchId: string, userId: string) {
@@ -25,4 +25,11 @@ export async function canScore(matchId: string, userId: string | undefined): Pro
   } catch {
     return false;
   }
+}
+
+/** Scoring guard: no ball or toss while the organiser has paused the tournament. */
+export async function assertTournamentNotPaused(tournamentId: string | null | undefined) {
+  if (!tournamentId) return;
+  const t = await prisma.tournament.findUnique({ where: { id: tournamentId }, select: { status: true } });
+  if (t?.status === 'paused') throw conflict('The tournament is paused by the organiser', 'TOURNAMENT_PAUSED');
 }

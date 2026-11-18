@@ -3,7 +3,11 @@ import type {
   CreatePlayerInput,
   CreateSeriesInput,
   CreateSingleMatchInput,
+  CreateNoticeInput,
   CreateTournamentInput,
+  PauseTournamentInput,
+  ResumeTournamentInput,
+  UpdateTournamentInput,
   CreateTeamInput,
   IngestEventsInput,
   InningsSetup,
@@ -34,6 +38,7 @@ import type {
   TournamentDetail,
   TournamentEntry,
   TournamentListItem,
+  TournamentNotice,
   User,
 } from './types';
 
@@ -74,6 +79,16 @@ export function createApi(c: ApiClient) {
         c.post<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`).then((r) => r.fixtures),
       fixtures: (id: string) =>
         c.get<{ fixtures: MatchSummary[] }>(`/tournaments/${id}/fixtures`, { auth: false }).then((r) => r.fixtures),
+      update: (id: string, input: UpdateTournamentInput) =>
+        c.patch<{ tournament: TournamentDetail; updatedMatches: number }>(`/tournaments/${id}`, input),
+      pause: (id: string, input: PauseTournamentInput) => c.post<{ notice: TournamentNotice }>(`/tournaments/${id}/pause`, input),
+      resume: (id: string, input: ResumeTournamentInput) => c.post<{ notice: TournamentNotice }>(`/tournaments/${id}/resume`, input),
+      notices: (id: string) =>
+        c.get<{ notices: TournamentNotice[] }>(`/tournaments/${id}/notices`, { auth: false }).then((r) => r.notices),
+      addNotice: (id: string, input: CreateNoticeInput) =>
+        c.post<{ notice: TournamentNotice }>(`/tournaments/${id}/notices`, input).then((r) => r.notice),
+      resolveNotice: (id: string, noticeId: string) =>
+        c.post<{ notice: TournamentNotice }>(`/tournaments/${id}/notices/${noticeId}/resolve`).then((r) => r.notice),
       setGroups: (id: string, assignments: { teamId: string; group: string | null }[]) =>
         c.put<{ teams: TournamentEntry[] }>(`/tournaments/${id}/groups`, { assignments }).then((r) => r.teams),
       awards: (id: string) => c.get<{ awards: SeriesAwards }>(`/tournaments/${id}/awards`, { auth: false }).then((r) => r.awards),

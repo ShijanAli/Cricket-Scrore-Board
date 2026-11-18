@@ -1,3 +1,4 @@
+import { STATUS_LABEL, STATUS_VARIANT } from './status';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -17,8 +18,6 @@ const FORMAT_LABEL: Record<string, string> = {
   league_semi_final: 'League + Semi-finals',
   knockout: 'Knockout',
 };
-const STATUS_LABEL = { draft: 'Setting up', live: 'In progress', completed: 'Completed' } as const;
-const STATUS_VARIANT = { draft: 'secondary', live: 'live', completed: 'success' } as const;
 
 function TournamentList() {
   const tournaments = useGetTournamentsQuery();

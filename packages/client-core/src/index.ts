@@ -11,4 +11,5 @@ export * from './cricket/match-utils';
 export * from './cricket/celebrations';
 export * from './cricket/match-report';
 export * from './forms/tournament-form';
+export * from './forms/tournament-settings';
 export * from './lib/uuid';

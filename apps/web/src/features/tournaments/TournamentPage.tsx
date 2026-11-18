@@ -1,6 +1,8 @@
+import { STATUS_LABEL, STATUS_VARIANT } from './status';
 import { useState } from 'react';
 import type { TournamentDetail } from '@cricket/client-core';
 import { useParams } from 'react-router-dom';
+import { NoticesBanner } from '@/components/cricket/NoticesBanner';
 import { FixturesList, StandingsView, TournamentAwards } from '@/components/cricket/TournamentView';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -17,6 +19,7 @@ import { useCurrentUser } from '@/app/hooks';
 import { useGetTeamsQuery } from '@/features/teams/teamsApi';
 import { errorMessage } from '@/lib/errors';
 import { paths } from '@/lib/paths';
+import { ManageSection } from './ManageSection';
 import {
   useAddTournamentScorerMutation,
   useAddTournamentTeamMutation,
@@ -26,8 +29,6 @@ import {
   useSetGroupsMutation,
 } from './tournamentsApi';
 
-const STATUS_LABEL = { draft: 'Setting up', live: 'In progress', completed: 'Completed' } as const;
-const STATUS_VARIANT = { draft: 'secondary', live: 'live', completed: 'success' } as const;
 
 function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolean }) {
   const myTeams = useGetTeamsQuery(undefined, { skip: !canManage });
@@ -167,12 +168,14 @@ function Detail({ t }: { t: TournamentDetail }) {
         <Badge variant={STATUS_VARIANT[t.status]}>{STATUS_LABEL[t.status]}</Badge>
         <Badge variant="outline">{t.rules.oversPerInnings} overs</Badge>
       </div>
+      <NoticesBanner id={t.id} />
       <TournamentAwards id={t.id} />
       <Tabs defaultValue={t.status === 'draft' ? 'teams' : 'fixtures'}>
         <TabsList>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
           <TabsTrigger value="table">Table</TabsTrigger>
+          {canManage ? <TabsTrigger value="manage">Manage</TabsTrigger> : null}
         </TabsList>
         <TabsContent value="teams">
           <TeamsSection t={t} canManage={canManage} />
@@ -183,6 +186,11 @@ function Detail({ t }: { t: TournamentDetail }) {
         <TabsContent value="table">
           <StandingsView id={t.id} />
         </TabsContent>
+        {canManage ? (
+          <TabsContent value="manage">
+            <ManageSection t={t} />
+          </TabsContent>
+        ) : null}
       </Tabs>
     </div>
   );

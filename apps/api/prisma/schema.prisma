@@ -94,6 +94,10 @@ enum TournamentFormat {
 enum TournamentStatus {
   draft
   live
+  /**
+   * Organiser halted play (dispute, weather...). No scoring or progression until resumed.
+   */
+  paused
   completed
 }
 
@@ -272,6 +276,7 @@ model Tournament {
   members TournamentMember[]
   teams   TournamentTeam[]
   matches Match[]
+  notices TournamentNotice[]
 
   @@index([ownerId])
   @@index([status])
@@ -549,4 +554,24 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+/// Public announcements about a tournament: delays, disputes, pauses. Active until resolved.
+model TournamentNotice {
+  id           String    @id @default(uuid()) @db.Uuid
+  tournamentId String    @db.Uuid
+  /**
+   * One of NOTICE_KINDS (validated in the API).
+   */
+  kind         String    @db.VarChar(20)
+  title        String    @db.VarChar(120)
+  message      String    @default("") @db.VarChar(1000)
+  createdById  String    @db.Uuid
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  resolvedAt   DateTime? @db.Timestamptz
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId, createdAt])
+  @@map("tournament_notices")
 }

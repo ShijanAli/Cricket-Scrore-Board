@@ -23,6 +23,7 @@ export const keys = {
   fixtures: (id: string) => ['tournaments', id, 'fixtures'] as const,
   standings: (id: string) => ['tournaments', id, 'standings'] as const,
   awards: (id: string) => ['tournaments', id, 'awards'] as const,
+  notices: (id: string) => ['tournaments', id, 'notices'] as const,
   seriesList: ['series'] as const,
   series: (id: string) => ['series', id] as const,
   seriesAwards: (id: string) => ['series', id, 'awards'] as const,

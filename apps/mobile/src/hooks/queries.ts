@@ -3,7 +3,11 @@ import type {
   AddSquadPlayerInput,
   CreateSeriesInput,
   CreateSingleMatchInput,
+  CreateNoticeInput,
   CreateTournamentInput,
+  PauseTournamentInput,
+  ResumeTournamentInput,
+  UpdateTournamentInput,
   ScheduleMatchInput,
   CreateTeamInput,
   InningsSetup,
@@ -64,6 +68,20 @@ export const useTournaments = () => useQuery({ queryKey: keys.tournaments, query
 export const useTournament = (id: string) => useQuery({ queryKey: keys.tournament(id), queryFn: () => api.tournaments.get(id) });
 export const useFixtures = (id: string) => useQuery({ queryKey: keys.fixtures(id), queryFn: () => api.tournaments.fixtures(id) });
 export const useStandings = (id: string) => useQuery({ queryKey: keys.standings(id), queryFn: () => api.tournaments.standings(id) });
+
+export const useTournamentNotices = (id: string, poll = false) =>
+  useQuery({ queryKey: keys.notices(id), queryFn: () => api.tournaments.notices(id), refetchInterval: poll ? 20_000 : false });
+
+export const useUpdateTournament = (id: string) =>
+  useApiMutation((v: UpdateTournamentInput) => api.tournaments.update(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const usePauseTournament = (id: string) =>
+  useApiMutation((v: PauseTournamentInput) => api.tournaments.pause(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const useResumeTournament = (id: string) =>
+  useApiMutation((v: ResumeTournamentInput) => api.tournaments.resume(id, v), () => [keys.tournament(id), keys.tournaments]);
+export const useAddTournamentNotice = (id: string) =>
+  useApiMutation((v: CreateNoticeInput) => api.tournaments.addNotice(id, v), () => [keys.notices(id)]);
+export const useResolveTournamentNotice = (id: string) =>
+  useApiMutation((noticeId: string) => api.tournaments.resolveNotice(id, noticeId), () => [keys.notices(id)]);
 
 export const useCreateTournament = () =>
   useApiMutation((v: CreateTournamentInput) => api.tournaments.create(v), () => [keys.tournaments]);

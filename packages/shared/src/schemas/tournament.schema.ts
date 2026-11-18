@@ -82,3 +82,42 @@ export const createSeriesSchema = z
   })
   .refine((s) => s.teamAId !== s.teamBId, { message: 'Teams must differ', path: ['teamBId'] });
 export type CreateSeriesInput = z.infer<typeof createSeriesSchema>;
+
+/**
+ * Organiser edits after creation. In a draft everything below can change; once fixtures exist only the
+ * name, match rules (applied to matches that have not started), points and tiebreakers can.
+ */
+export const updateTournamentSchema = z
+  .object({
+    name: z.string().trim().min(3).max(80).optional(),
+    rules: matchRulesSchema.optional(),
+    points: pointsConfigSchema.optional(),
+    tiebreakers: z.array(z.enum(TIEBREAKERS)).min(1).optional(),
+    /** Draft only. */
+    teamCount: z.number().int().min(2).max(32).optional(),
+    groupCount: z.number().int().optional(),
+    doubleRoundRobin: z.boolean().optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), { message: 'Nothing to update' });
+export type UpdateTournamentInput = z.infer<typeof updateTournamentSchema>;
+
+/** What a public notice is about. `paused` / `resumed` are created by pause and resume. */
+export const NOTICE_KINDS = ['info', 'delay', 'weather', 'dispute', 'rescheduled', 'paused', 'resumed', 'other'] as const;
+export type NoticeKind = (typeof NOTICE_KINDS)[number];
+
+export const createNoticeSchema = z.object({
+  kind: z.enum(NOTICE_KINDS).default('info'),
+  title: z.string().trim().min(3).max(120),
+  message: z.string().trim().max(1000).default(''),
+});
+export type CreateNoticeInput = z.infer<typeof createNoticeSchema>;
+
+export const pauseTournamentSchema = z.object({
+  /** Shown on the public page while the tournament is paused. */
+  reason: z.string().trim().min(3).max(200),
+  message: z.string().trim().max(1000).default(''),
+});
+export type PauseTournamentInput = z.infer<typeof pauseTournamentSchema>;
+
+export const resumeTournamentSchema = z.object({ message: z.string().trim().max(1000).default('') });
+export type ResumeTournamentInput = z.infer<typeof resumeTournamentSchema>;

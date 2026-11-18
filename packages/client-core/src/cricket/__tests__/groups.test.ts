@@ -12,9 +12,9 @@ describe('group stage helpers', () => {
   });
 
   it('one table per group, sorted by letter; plain league stays one table', () => {
-    const t = groupStandings([{ group: 'B', n: 1 }, { group: 'A', n: 2 }, { group: 'B', n: 3 }]);
+    const t = groupStandings<{ group?: string | null; n: number }>([{ group: 'B', n: 1 }, { group: 'A', n: 2 }, { group: 'B', n: 3 }]);
     expect(t.map((x) => [x.label, x.rows.length])).toEqual([['Group A', 1], ['Group B', 2]]);
-    expect(groupStandings([{ n: 1 }, { n: 2 }])).toMatchObject([{ group: null, label: 'Table' }]);
+    expect(groupStandings<{ group?: string | null; n: number }>([{ n: 1 }, { n: 2 }])).toMatchObject([{ group: null, label: 'Table' }]);
   });
 
   it('form: groups need a valid count, and the count is sent only for the group format', () => {

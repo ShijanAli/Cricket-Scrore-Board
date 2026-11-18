@@ -3,9 +3,12 @@ import type {
   InningsState,
   MatchRules,
   MatchStatus,
+  NoticeKind,
   PlayerRole,
+  PointsConfig,
   ResultType,
   ScheduleMode,
+  Tiebreaker,
   TossDecision,
   TournamentFormat,
 } from '@cricket/shared';
@@ -152,7 +155,7 @@ export interface EventsResult {
 }
 
 // ---------- tournaments ----------
-export type TournamentStatus = 'draft' | 'live' | 'completed';
+export type TournamentStatus = 'draft' | 'live' | 'paused' | 'completed';
 
 export interface TournamentListItem {
   id: string;
@@ -190,8 +193,22 @@ export interface TournamentDetail {
   scheduleMode: ScheduleMode;
   status: TournamentStatus;
   rules: MatchRules;
+  points: PointsConfig;
+  tiebreakers: Tiebreaker[];
   teams: TournamentEntry[];
   members: TournamentMember[];
+}
+
+/** A public announcement: delay, dispute, pause... `active` until the organiser resolves it. */
+export interface TournamentNotice {
+  id: string;
+  tournamentId: string;
+  kind: NoticeKind;
+  title: string;
+  message: string;
+  createdAt: string;
+  resolvedAt: string | null;
+  active: boolean;
 }
 
 export interface StandingRowDto {

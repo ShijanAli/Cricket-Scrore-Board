@@ -1,4 +1,4 @@
-import type { CreateTournamentInput } from '@cricket/shared';
+import type { CreateNoticeInput, CreateTournamentInput, PauseTournamentInput, ResumeTournamentInput, UpdateTournamentInput } from '@cricket/shared';
 import { api } from '@/app/api/client';
 import { baseApi, call } from '@/app/api/baseApi';
 
@@ -45,6 +45,30 @@ export const tournamentsApi = baseApi.injectEndpoints({
       queryFn: ({ id, email }: { id: string; email: string }) => call(() => api.tournaments.addScorer(id, email)),
       invalidatesTags: (_r, _e, { id }) => [{ type: 'Tournament', id }],
     }),
+    getTournamentNotices: b.query({
+      queryFn: (id: string) => call(() => api.tournaments.notices(id)),
+      providesTags: (_r, _e, id) => [{ type: 'Notices', id }],
+    }),
+    updateTournament: b.mutation({
+      queryFn: ({ id, input }: { id: string; input: UpdateTournamentInput }) => call(() => api.tournaments.update(id, input)),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Tournament', id }, 'Tournaments', { type: 'Fixtures', id }, { type: 'Standings', id }],
+    }),
+    pauseTournament: b.mutation({
+      queryFn: ({ id, input }: { id: string; input: PauseTournamentInput }) => call(() => api.tournaments.pause(id, input)),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Tournament', id }, { type: 'Notices', id }, 'Tournaments'],
+    }),
+    resumeTournament: b.mutation({
+      queryFn: ({ id, input }: { id: string; input: ResumeTournamentInput }) => call(() => api.tournaments.resume(id, input)),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Tournament', id }, { type: 'Notices', id }, { type: 'Fixtures', id }, { type: 'Standings', id }, 'Tournaments'],
+    }),
+    addTournamentNotice: b.mutation({
+      queryFn: ({ id, input }: { id: string; input: CreateNoticeInput }) => call(() => api.tournaments.addNotice(id, input)),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Notices', id }],
+    }),
+    resolveTournamentNotice: b.mutation({
+      queryFn: ({ id, noticeId }: { id: string; noticeId: string }) => call(() => api.tournaments.resolveNotice(id, noticeId)),
+      invalidatesTags: (_r, _e, { id }) => [{ type: 'Notices', id }],
+    }),
     generateFixtures: b.mutation({
       queryFn: (id: string) => call(() => api.tournaments.generateFixtures(id)),
       invalidatesTags: (_r, _e, id) => [
@@ -69,4 +93,10 @@ export const {
   useAddTournamentScorerMutation,
   useGenerateFixturesMutation,
   useSetGroupsMutation,
+  useGetTournamentNoticesQuery,
+  useUpdateTournamentMutation,
+  usePauseTournamentMutation,
+  useResumeTournamentMutation,
+  useAddTournamentNoticeMutation,
+  useResolveTournamentNoticeMutation,
 } = tournamentsApi;

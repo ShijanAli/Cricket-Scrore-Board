@@ -25,6 +25,6 @@ export async function call<T>(fn: () => Promise<T>): Promise<{ data: T } | { err
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fakeBaseQuery<ApiFailure>(),
-  tagTypes: ['Teams', 'Team', 'Matches', 'Match', 'Live', 'Tournaments', 'Tournament', 'Fixtures', 'Standings', 'SeriesList', 'Series'],
+  tagTypes: ['Teams', 'Team', 'Matches', 'Match', 'Live', 'Tournaments', 'Tournament', 'Notices', 'Fixtures', 'Standings', 'SeriesList', 'Series'],
   endpoints: () => ({}),
 });

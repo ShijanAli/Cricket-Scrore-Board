@@ -3,6 +3,9 @@ import { Alert, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { groupByStage, groupStandings, type TournamentDetail } from '@cricket/client-core';
 import { AwardsCard } from '@/cricket/AwardsCard';
+import { ManageSection } from '@/cricket/ManageSection';
+import { NoticesBanner } from '@/cricket/NoticesBanner';
+import { tournamentBadge } from '@/cricket/tournamentStatus';
 import { FixtureRow } from '@/cricket/FixtureRow';
 import { StandingsTable } from '@/cricket/StandingsTable';
 import {
@@ -20,7 +23,7 @@ import { errorMessage } from '@/lib/query';
 import { useAuth } from '@/state/auth';
 import { Badge, Button, Card, Chip, EmptyState, ErrorBanner, QueryBoundary, Screen, Segmented, TeamBadge, Text, TextField, space } from '@/ui';
 
-type Tab = 'teams' | 'fixtures' | 'table';
+type Tab = 'teams' | 'fixtures' | 'table' | 'manage';
 
 function TeamsSection({ t, canManage }: { t: TournamentDetail; canManage: boolean }) {
   const myTeams = useTeams();
@@ -137,14 +140,20 @@ function Detail({ t }: { t: TournamentDetail }) {
     <>
       <Stack.Screen options={{ title: t.name }} />
       <View style={{ flexDirection: 'row', gap: space.sm }}>
-        <Badge label={t.status === 'draft' ? 'Setting up' : t.status === 'live' ? 'In progress' : 'Completed'} tone={t.status === 'live' ? 'live' : t.status === 'completed' ? 'success' : 'neutral'} />
+        <Badge {...tournamentBadge(t.status)} />
         <Badge label={`${t.rules.oversPerInnings} overs`} />
       </View>
+      <NoticesBanner id={t.id} />
       <AwardsCard awards={awards.data} />
-      <Segmented options={[{ value: 'teams', label: 'Teams' }, { value: 'fixtures', label: 'Fixtures' }, { value: 'table', label: 'Table' }] as const} value={tab} onChange={setTab} />
+      <Segmented
+        options={[{ value: 'teams', label: 'Teams' }, { value: 'fixtures', label: 'Fixtures' }, { value: 'table', label: 'Table' }, ...(canManage ? [{ value: 'manage', label: 'Manage' }] : [])] as { value: Tab; label: string }[]}
+        value={tab}
+        onChange={setTab}
+      />
       {tab === 'teams' ? <TeamsSection t={t} canManage={canManage} /> : null}
       {tab === 'fixtures' ? <FixturesSection id={t.id} /> : null}
       {tab === 'table' ? <TableSection id={t.id} /> : null}
+      {tab === 'manage' && canManage ? <ManageSection t={t} /> : null}
     </>
   );
 }
