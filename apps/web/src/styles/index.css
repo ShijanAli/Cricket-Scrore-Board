@@ -4,28 +4,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.985 0.004 150);
-  --foreground: oklch(0.2 0.02 160);
+  --radius: 0.875rem;
+  --background: oklch(0.975 0.018 170);
+  --foreground: oklch(0.22 0.04 200);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.02 160);
+  --card-foreground: oklch(0.22 0.04 200);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.02 160);
-  /* brand green #0E7C4A */
-  --primary: oklch(0.5 0.115 157);
+  --popover-foreground: oklch(0.22 0.04 200);
+  /* vivid emerald */
+  --primary: oklch(0.56 0.15 160);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.02 155);
-  --secondary-foreground: oklch(0.3 0.06 157);
-  --muted: oklch(0.96 0.008 155);
-  --muted-foreground: oklch(0.48 0.02 160);
-  --accent: oklch(0.94 0.035 155);
-  --accent-foreground: oklch(0.3 0.06 157);
-  --destructive: oklch(0.55 0.22 27);
-  --border: oklch(0.9 0.01 155);
-  --input: oklch(0.9 0.01 155);
-  --ring: oklch(0.5 0.115 157);
-  --success: oklch(0.5 0.115 157);
-  --warning: oklch(0.62 0.15 60);
+  --secondary: oklch(0.94 0.045 180);
+  --secondary-foreground: oklch(0.32 0.08 180);
+  --muted: oklch(0.955 0.02 175);
+  --muted-foreground: oklch(0.47 0.03 200);
+  --accent: oklch(0.93 0.06 165);
+  --accent-foreground: oklch(0.3 0.09 165);
+  --destructive: oklch(0.58 0.23 25);
+  --border: oklch(0.89 0.035 170);
+  --input: oklch(0.86 0.045 170);
+  --ring: oklch(0.65 0.15 165);
+  --success: oklch(0.56 0.15 160);
+  --warning: oklch(0.6 0.16 60);
 }
 
 @theme inline {
@@ -61,6 +61,11 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(60rem 40rem at -10% -10%, oklch(0.9 0.09 165 / 0.55), transparent 60%),
+      radial-gradient(50rem 36rem at 110% 0%, oklch(0.9 0.08 230 / 0.45), transparent 60%),
+      radial-gradient(50rem 40rem at 50% 115%, oklch(0.92 0.09 95 / 0.4), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
@@ -79,4 +84,52 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-celebrate-pop { animation: none; }
   .confetti-piece { display: none; }
+}
+
+/* ---- brand look ---- */
+@utility bg-brand {
+  background-image: linear-gradient(135deg, oklch(0.45 0.12 165) 0%, oklch(0.58 0.15 175) 45%, oklch(0.62 0.14 215) 100%);
+}
+@utility bg-brand-soft {
+  background-image: linear-gradient(135deg, oklch(0.96 0.04 165), oklch(0.96 0.04 215));
+}
+@utility bg-night {
+  background-image: linear-gradient(170deg, oklch(0.27 0.07 175) 0%, oklch(0.24 0.08 230) 55%, oklch(0.25 0.1 285) 100%);
+}
+@utility text-gradient {
+  background-image: linear-gradient(90deg, oklch(0.45 0.13 165), oklch(0.58 0.14 200));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(6deg); }
+}
+.animate-float-slow { animation: float-slow 7s ease-in-out infinite; }
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in { animation: rise-in 0.45s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow, .animate-rise-in { animation: none; }
+}
+
+/* ---- cricket doodle wallpaper: faint ball / stumps / bat tiled behind every page ---- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220' fill='none' stroke='%230e9f6e' stroke-opacity='.11' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='36' cy='44' r='13'/%3E%3Cpath d='M26 36c6 5 6 11 0 16M46 36c-6 5-6 11 0 16'/%3E%3Cpath d='M130 24v36M142 24v36M154 24v36M128 20h28'/%3E%3Cg transform='rotate(35 70 150)'%3E%3Crect x='64' y='120' width='12' height='60' rx='5'/%3E%3Crect x='66' y='100' width='8' height='24' rx='3'/%3E%3C/g%3E%3Ccircle cx='170' cy='170' r='9'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: spin-slow 14s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin-slow { animation: none; }
 }

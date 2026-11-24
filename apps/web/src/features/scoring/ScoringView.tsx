@@ -3,6 +3,7 @@ import { oversFromBalls } from '@cricket/engine';
 import { playerNames, teamName, xiOf, type Intent, type MatchDetail } from '@cricket/client-core';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { CricketBall, CricketBat, PlayerAvatar } from '@/components/art/CricketArt';
 import { CelebrationOverlay } from '@/components/cricket/CelebrationOverlay';
 import { ExtrasDialog } from '@/components/cricket/ExtrasDialog';
 import { OverStrip } from '@/components/cricket/OverStrip';
@@ -64,31 +65,52 @@ export function ScoringView({ match, inningsNo }: { match: MatchDetail; inningsN
           onUnlock={() => controller.clearLocked()}
         />
 
-        <Card>
-          <CardContent className="space-y-1.5 text-sm">
+        <Card className="overflow-hidden pt-0">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-2 text-xs font-bold tracking-wider text-white uppercase">
+            <CricketBat className="size-4 rotate-45" /> At the crease
+          </div>
+          <CardContent className="space-y-3">
             {striker ? (
-              <p className="font-semibold">
-                🏏 {nameOf(striker.id)}* <span className="tabular-nums">{striker.runs} ({striker.balls})</span>
-              </p>
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-50 p-2.5 ring-1 ring-emerald-200">
+                <PlayerAvatar name={nameOf(striker.id)} role="batter" ring />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold">{nameOf(striker.id)}*</p>
+                  <p className="text-xs font-medium text-emerald-700">On strike</p>
+                </div>
+                <p className="text-2xl font-extrabold tabular-nums">
+                  {striker.runs} <span className="text-sm font-semibold text-muted-foreground">({striker.balls})</span>
+                </p>
+              </div>
             ) : null}
             {nonStriker ? (
-              <p className="pl-6">
-                {nameOf(nonStriker.id)} <span className="tabular-nums">{nonStriker.runs} ({nonStriker.balls})</span>
-              </p>
+              <div className="flex items-center gap-3 px-2.5">
+                <PlayerAvatar name={nameOf(nonStriker.id)} role="batter" size="sm" />
+                <p className="min-w-0 flex-1 truncate font-medium">{nameOf(nonStriker.id)}</p>
+                <p className="font-bold tabular-nums">
+                  {nonStriker.runs} <span className="text-xs font-semibold text-muted-foreground">({nonStriker.balls})</span>
+                </p>
+              </div>
             ) : null}
             {bowler ? (
-              <p className="text-muted-foreground">
-                ⚾ {nameOf(bowler.id)} {oversFromBalls(bowler.legalBalls, state.ballsPerOver)}-{bowler.maidens}-{bowler.runs}-{bowler.wickets}
-              </p>
+              <div className="flex items-center gap-3 rounded-xl bg-rose-50 p-2.5 ring-1 ring-rose-200">
+                <PlayerAvatar name={nameOf(bowler.id)} role="bowler" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-bold">{nameOf(bowler.id)}</p>
+                  <p className="text-xs font-medium text-rose-700">Bowling</p>
+                </div>
+                <p className="text-lg font-extrabold tabular-nums">
+                  {oversFromBalls(bowler.legalBalls, state.ballsPerOver)}-{bowler.maidens}-{bowler.runs}-{bowler.wickets}
+                </p>
+              </div>
             ) : null}
-            <p className="text-muted-foreground">
-              Partnership {state.partnership.runs} ({state.partnership.balls})
+            <p className="rounded-lg bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800">
+              Partnership: {state.partnership.runs} runs ({state.partnership.balls} balls)
             </p>
           </CardContent>
         </Card>
 
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold">This over</h2>
+          <h2 className="flex items-center gap-2 text-sm font-bold"><CricketBall className="size-4" /> This over</h2>
           <OverStrip balls={state.thisOver} />
         </div>
       </div>

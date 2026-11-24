@@ -1,5 +1,6 @@
 import { oversFromBalls, strikeRate } from '@cricket/engine';
 import type { DismissalInfo, InningsState } from '@cricket/shared';
+import { CricketBall, CricketBat, PlayerAvatar } from '@/components/art/CricketArt';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -27,12 +28,12 @@ export function Scorecard({ title, state, nameOf }: { title: string; state: Inni
   const e = state.extras;
   const extrasTotal = e.wide + e.noBall + e.bye + e.legBye;
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-baseline justify-between gap-2">
+    <Card className="overflow-hidden pt-0">
+      <CardHeader className="bg-gradient-to-r from-emerald-600 to-teal-500 px-5 py-4 text-white">
+        <CardTitle className="flex flex-wrap items-baseline justify-between gap-2 text-lg">
           <span>{title}</span>
           <span className="tabular-nums">
-            {state.runs}/{state.wickets} <span className="text-sm font-normal text-muted-foreground">({oversFromBalls(state.legalBalls, state.ballsPerOver)} ov)</span>
+            {state.runs}/{state.wickets} <span className="text-sm font-normal text-white/80">({oversFromBalls(state.legalBalls, state.ballsPerOver)} ov)</span>
           </span>
         </CardTitle>
       </CardHeader>
@@ -40,7 +41,11 @@ export function Scorecard({ title, state, nameOf }: { title: string; state: Inni
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-full">Batter</TableHead>
+              <TableHead className="w-full">
+                <span className="inline-flex items-center gap-1.5">
+                  <CricketBat className="size-4 rotate-45" /> Batter
+                </span>
+              </TableHead>
               <TableHead className="text-right">R</TableHead>
               <TableHead className="text-right">B</TableHead>
               <TableHead className="text-right">4s</TableHead>
@@ -52,12 +57,17 @@ export function Scorecard({ title, state, nameOf }: { title: string; state: Inni
             {batters.map((b) => (
               <TableRow key={b.id}>
                 <TableCell>
-                  <div className="font-medium">
-                    {nameOf(b.id)}
-                    {b.id === state.strikerId ? ' *' : ''}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {b.status === 'retiredHurt' ? 'retired hurt' : b.status === 'batting' ? 'batting' : dismissal(b.out, nameOf)}
+                  <div className="flex items-center gap-2.5">
+                    <PlayerAvatar name={nameOf(b.id)} role="batter" size="sm" ring={b.status === 'batting'} />
+                    <div>
+                      <div className="font-semibold">
+                        {nameOf(b.id)}
+                        {b.id === state.strikerId ? ' *' : ''}
+                      </div>
+                      <div className={b.status === 'batting' ? 'text-xs font-medium text-emerald-600' : 'text-xs text-muted-foreground'}>
+                        {b.status === 'retiredHurt' ? 'retired hurt' : b.status === 'batting' ? 'batting' : dismissal(b.out, nameOf)}
+                      </div>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-semibold tabular-nums">{b.runs}</TableCell>
@@ -76,7 +86,11 @@ export function Scorecard({ title, state, nameOf }: { title: string; state: Inni
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-full">Bowler</TableHead>
+              <TableHead className="w-full">
+                <span className="inline-flex items-center gap-1.5">
+                  <CricketBall className="size-4" /> Bowler
+                </span>
+              </TableHead>
               <TableHead className="text-right">O</TableHead>
               <TableHead className="text-right">M</TableHead>
               <TableHead className="text-right">R</TableHead>
@@ -87,7 +101,12 @@ export function Scorecard({ title, state, nameOf }: { title: string; state: Inni
           <TableBody>
             {bowlers.map((b) => (
               <TableRow key={b.id}>
-                <TableCell className="font-medium">{nameOf(b.id)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2.5 font-semibold">
+                    <PlayerAvatar name={nameOf(b.id)} role="bowler" size="sm" />
+                    {nameOf(b.id)}
+                  </div>
+                </TableCell>
                 <TableCell className="text-right tabular-nums">{oversFromBalls(b.legalBalls, state.ballsPerOver)}</TableCell>
                 <TableCell className="text-right tabular-nums">{b.maidens}</TableCell>
                 <TableCell className="text-right tabular-nums">{b.runs}</TableCell>

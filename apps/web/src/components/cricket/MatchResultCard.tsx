@@ -19,7 +19,7 @@ export function MatchResultCard({ match }: { match: MatchDetail }) {
   const r = buildReportView(match);
   if (!r) {
     return match.resultText ? (
-      <Card className="bg-primary/10">
+      <Card className="border-amber-200 bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100">
         <CardContent>
           <p className="text-lg font-semibold">{match.resultText}</p>
         </CardContent>
@@ -27,7 +27,7 @@ export function MatchResultCard({ match }: { match: MatchDetail }) {
     ) : null;
   }
   return (
-    <Card className="bg-primary/10">
+    <Card className="border-amber-200 bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100">
       <CardContent className="space-y-4">
         <p className="flex items-center gap-2 text-lg font-semibold">
           <Trophy className="size-5 text-amber-500" /> {r.resultText}

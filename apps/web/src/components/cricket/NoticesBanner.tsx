@@ -40,7 +40,7 @@ export function NoticesBanner({ id, poll = false }: { id: string; poll?: boolean
         </div>
       ) : null}
       {others.map((n) => (
-        <NoticeItem key={n.id} n={n} className="border-primary/30 bg-primary/5" />
+        <NoticeItem key={n.id} n={n} className="border-sky-300 bg-gradient-to-r from-sky-50 to-indigo-50" />
       ))}
     </div>
   );

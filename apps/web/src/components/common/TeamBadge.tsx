@@ -13,8 +13,8 @@ export function TeamBadge({ shortName, color, size = 'md', className }: TeamBadg
   return (
     <span
       aria-hidden="true"
-      className={cn('inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white', SIZES[size], className)}
-      style={{ backgroundColor: color || '#0E7C4A' }}
+      className={cn('inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white shadow-md ring-2 ring-white', SIZES[size], className)}
+      style={{ backgroundImage: `linear-gradient(135deg, ${color || '#0E7C4A'}, color-mix(in oklab, ${color || '#0E7C4A'} 65%, black))` }}
     >
       {shortName.slice(0, 4)}
     </span>

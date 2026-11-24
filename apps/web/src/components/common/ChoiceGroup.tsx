@@ -52,7 +52,7 @@ export function ChoiceButton({
       aria-checked={selected}
       className={cn(
         'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40',
-        selected ? 'border-primary bg-primary text-primary-foreground' : 'bg-background hover:bg-accent',
+        selected ? 'border-transparent bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-600/25' : 'border-emerald-200 bg-white hover:bg-emerald-50',
         className,
       )}
       {...props}

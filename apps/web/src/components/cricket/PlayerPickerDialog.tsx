@@ -1,3 +1,4 @@
+import { PlayerAvatar } from '@/components/art/CricketArt';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { PickablePlayer } from './WicketDialog';
@@ -22,7 +23,10 @@ export function PlayerPickerDialog({ open, title, players, onPick, emptyText = '
         <div className="grid gap-2">
           {players.map((p) => (
             <Button key={p.id} variant="outline" className="h-12 justify-between" onClick={() => onPick(p.id)}>
-              <span>{p.name}</span>
+              <span className="flex items-center gap-3">
+                <PlayerAvatar name={p.name} size="sm" />
+                {p.name}
+              </span>
               {p.note ? <span className="text-xs text-muted-foreground">{p.note}</span> : null}
             </Button>
           ))}

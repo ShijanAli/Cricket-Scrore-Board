@@ -24,7 +24,7 @@ export function StandingsTable({ rows, qualifyCount = 0 }: { rows: readonly Stan
         </TableHeader>
         <TableBody>
           {rows.map((r) => (
-            <TableRow key={r.teamId} className={r.rank <= qualifyCount ? 'bg-primary/5' : undefined}>
+            <TableRow key={r.teamId} className={r.rank <= qualifyCount ? 'bg-emerald-100/70 font-medium' : undefined}>
               <TableCell className="pl-4 text-muted-foreground tabular-nums">{r.rank}</TableCell>
               <TableCell>
                 <span className="flex items-center gap-2 font-medium">

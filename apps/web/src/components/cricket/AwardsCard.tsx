@@ -25,7 +25,7 @@ export function AwardsCard({ scope, id }: { scope: 'tournament' | 'series'; id: 
   const a = (scope === 'tournament' ? tournament : series).data;
   if (!a || a.matchesCounted === 0) return null;
   return (
-    <Card className="bg-primary/10">
+    <Card className="border-amber-200 bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100">
       <CardContent className="space-y-4">
         {a.champion ? (
           <div className="flex items-start gap-3">

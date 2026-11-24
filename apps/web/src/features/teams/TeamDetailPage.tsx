@@ -1,3 +1,4 @@
+import { PlayerAvatar } from '@/components/art/CricketArt';
 import { useState } from 'react';
 import { PLAYER_ROLES, type PlayerRole } from '@cricket/shared';
 import { Trash2 } from 'lucide-react';
@@ -66,9 +67,12 @@ export function TeamDetailPage() {
                 {t.roster.map((m) => (
                   <Card key={m.playerId} className="py-3">
                     <CardContent className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 space-y-1">
-                        <p className="truncate font-medium">{m.player.name}</p>
-                        <Badge variant="secondary">{ROLE_LABEL[m.player.role]}</Badge>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <PlayerAvatar name={m.player.name} role={m.player.role} />
+                        <div className="min-w-0 space-y-1">
+                          <p className="truncate font-semibold">{m.player.name}</p>
+                          <Badge variant="secondary">{ROLE_LABEL[m.player.role]}</Badge>
+                        </div>
                       </div>
                       <Button
                         variant="ghost"
