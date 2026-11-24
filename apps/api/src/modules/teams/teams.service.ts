@@ -83,28 +83,34 @@ export const listMyPlayers = (userId: string, q?: string) =>
     take: 100,
   });
 
+/**
+ * Adds a player to a squad. Every database round trip is slow when the database is remote, so this
+ * keeps it to two: the checks run together, then one write (a brand new player is created in the same
+ * statement as its squad row).
+ */
 export async function addToSquad(teamId: string, userId: string, input: AddSquadPlayerInput) {
-  await assertTeamOwner(teamId, userId);
+  if (!input.playerId && !input.newPlayer) throw badRequest('Provide either playerId or newPlayer');
 
-  const size = await prisma.teamPlayer.count({ where: { teamId } });
+  const [team, size, existing] = await Promise.all([
+    prisma.team.findUnique({ where: { id: teamId } }),
+    prisma.teamPlayer.count({ where: { teamId } }),
+    input.playerId ? prisma.player.findUnique({ where: { id: input.playerId } }) : Promise.resolve(null),
+  ]);
+  if (!team) throw notFound('Team');
+  if (team.ownerId !== userId) throw forbidden('This team belongs to someone else');
   if (size >= MAX_SQUAD) throw badRequest(`A squad can have at most ${MAX_SQUAD} players`, 'SQUAD_FULL');
-
-  let playerId = input.playerId;
-  if (playerId) {
-    const player = await prisma.player.findUnique({ where: { id: playerId } });
-    if (!player) throw notFound('Player');
-    if (player.createdById !== userId) throw forbidden('You can only add players you created');
-  } else if (input.newPlayer) {
-    playerId = (await createPlayer(userId, input.newPlayer)).id;
-  } else {
-    throw badRequest('Provide either playerId or newPlayer');
+  if (input.playerId) {
+    if (!existing) throw notFound('Player');
+    if (existing.createdById !== userId) throw forbidden('You can only add players you created');
   }
 
   try {
     return await prisma.teamPlayer.create({
       data: {
-        teamId,
-        playerId,
+        team: { connect: { id: teamId } },
+        player: input.playerId
+          ? { connect: { id: input.playerId } }
+          : { create: { ...input.newPlayer!, createdById: userId } },
         isCaptain: input.isCaptain,
         isViceCaptain: input.isViceCaptain,
         isWicketkeeper: input.isWicketkeeper,
