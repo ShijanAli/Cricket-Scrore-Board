@@ -1,5 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import type {
   AddSquadPlayerInput,
+  AddSquadPlayersBulkInput,
   CreatePlayerInput,
   CreateTeamInput,
   UpdateTeamInput,
@@ -121,6 +123,60 @@ export async function addToSquad(teamId: string, userId: string, input: AddSquad
     if (isUniqueViolation(e)) throw conflict('Player is already in this squad', 'ALREADY_IN_SQUAD');
     throw e;
   }
+}
+
+/**
+ * Creates several guest players and puts them all in a squad at once. Ids are generated here so the
+ * players and the squad rows go in as two bulk inserts inside one transaction, all-or-nothing.
+ */
+export async function addManyToSquad(teamId: string, userId: string, input: AddSquadPlayersBulkInput) {
+  const [team, size] = await Promise.all([
+    prisma.team.findUnique({ where: { id: teamId } }),
+    prisma.teamPlayer.count({ where: { teamId } }),
+  ]);
+  if (!team) throw notFound('Team');
+  if (team.ownerId !== userId) throw forbidden('This team belongs to someone else');
+  if (size + input.players.length > MAX_SQUAD) {
+    throw badRequest(`A squad can have at most ${MAX_SQUAD} players`, 'SQUAD_FULL');
+  }
+
+  const rows = input.players.map((p) => ({ id: randomUUID(), p }));
+  await prisma.$transaction([
+    prisma.player.createMany({
+      data: rows.map(({ id, p }) => ({
+        id,
+        name: p.name,
+        role: p.role,
+        phone: p.phone,
+        jerseyNumber: p.jerseyNumber,
+        createdById: userId,
+      })),
+    }),
+    prisma.teamPlayer.createMany({
+      data: rows.map(({ id, p }) => ({
+        teamId,
+        playerId: id,
+        isCaptain: p.isCaptain,
+        isViceCaptain: p.isViceCaptain,
+        isWicketkeeper: p.isWicketkeeper,
+      })),
+    }),
+  ]);
+
+  return rows.map(({ id, p }) => ({
+    teamId,
+    playerId: id,
+    isCaptain: p.isCaptain,
+    isViceCaptain: p.isViceCaptain,
+    isWicketkeeper: p.isWicketkeeper,
+    player: {
+      id,
+      name: p.name,
+      phone: p.phone ?? null,
+      role: p.role,
+      jerseyNumber: p.jerseyNumber ?? null,
+    },
+  }));
 }
 
 export async function removeFromSquad(teamId: string, userId: string, playerId: string) {

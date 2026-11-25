@@ -25,6 +25,13 @@ export async function call<T>(fn: () => Promise<T>): Promise<{ data: T } | { err
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: fakeBaseQuery<ApiFailure>(),
+  // Show what we already have instantly, refresh quietly in the background:
+  // data stays cached for 5 minutes after the last screen using it closes, and is re-checked on
+  // mount only when it is older than 30 seconds. (Spinners show on the first load only.)
+  keepUnusedDataFor: 300,
+  refetchOnMountOrArgChange: 30,
+  refetchOnFocus: false, // with a slow link, refetching every query on each tab switch is the opposite of smooth
+  refetchOnReconnect: true,
   tagTypes: ['Teams', 'Team', 'Matches', 'Match', 'Live', 'Tournaments', 'Tournament', 'Notices', 'Fixtures', 'Standings', 'SeriesList', 'Series'],
   endpoints: () => ({}),
 });

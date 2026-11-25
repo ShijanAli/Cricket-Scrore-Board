@@ -61,9 +61,10 @@ matchesRouter.get(
   optionalAuth,
   validate(idParams, 'params'),
   asyncHandler(async (req, res) => {
-    const match = await matches.getMatchView(req.params.id!);
     // Tells the app whether to show scoring buttons (owner, or organiser/scorer of the tournament).
-    res.json({ match: { ...match, canScore: await canScore(req.params.id!, req.userId) } });
+    // The two lookups are independent, so they run together.
+    const [match, mayScore] = await Promise.all([matches.getMatchViewCached(req.params.id!), canScore(req.params.id!, req.userId)]);
+    res.json({ match: { ...match, canScore: mayScore } });
   }),
 );
 

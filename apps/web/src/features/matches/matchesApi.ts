@@ -5,8 +5,15 @@ import type {
   ScheduleMatchInput,
   TossInput,
 } from '@cricket/shared';
+import type { MatchDetail } from '@cricket/client-core';
+import type { AppDispatch } from '@/app/store';
 import { api } from '@/app/api/client';
 import { baseApi, call } from '@/app/api/baseApi';
+
+/** The server answers every match change with the whole updated match, so put it straight into the cache instead of fetching it again. */
+function putMatch(dispatch: AppDispatch, matchId: string, fresh: MatchDetail) {
+  dispatch(matchesApi.util.updateQueryData('getMatch', matchId, (d) => void Object.assign(d, fresh, { canScore: d.canScore })));
+}
 
 export const matchesApi = baseApi.injectEndpoints({
   endpoints: (b) => ({
@@ -29,22 +36,49 @@ export const matchesApi = baseApi.injectEndpoints({
     setPlayingXI: b.mutation({
       queryFn: ({ matchId, input }: { matchId: string; input: PlayingXIInput }) =>
         call(() => api.matches.setPlayingXI(matchId, input)),
-      invalidatesTags: (_r, _e, { matchId }) => [{ type: 'Match', id: matchId }],
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          putMatch(dispatch, matchId, (await queryFulfilled).data);
+        } catch {
+          // the page shows the error
+        }
+      },
     }),
     recordToss: b.mutation({
       queryFn: ({ matchId, input }: { matchId: string; input: TossInput }) =>
         call(() => api.matches.toss(matchId, input)),
-      invalidatesTags: (_r, _e, { matchId }) => [{ type: 'Match', id: matchId }, 'Matches'],
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          putMatch(dispatch, matchId, (await queryFulfilled).data);
+        } catch {
+          // the page shows the error
+        }
+      },
+      invalidatesTags: ['Matches'],
     }),
     startInnings: b.mutation({
       queryFn: ({ matchId, input }: { matchId: string; input: InningsSetup }) =>
         call(() => api.matches.startInnings(matchId, input)),
-      invalidatesTags: (_r, _e, { matchId }) => [{ type: 'Match', id: matchId }, 'Matches', 'Live'],
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          putMatch(dispatch, matchId, (await queryFulfilled).data);
+        } catch {
+          // the page shows the error
+        }
+      },
+      invalidatesTags: ['Matches', 'Live'],
     }),
     scheduleMatch: b.mutation({
       queryFn: ({ matchId, input }: { matchId: string; input: ScheduleMatchInput }) =>
         call(() => api.matches.schedule(matchId, input)),
-      invalidatesTags: (_r, _e, { matchId }) => [{ type: 'Match', id: matchId }, 'Matches', 'Fixtures'],
+      async onQueryStarted({ matchId }, { dispatch, queryFulfilled }) {
+        try {
+          putMatch(dispatch, matchId, (await queryFulfilled).data);
+        } catch {
+          // the page shows the error
+        }
+      },
+      invalidatesTags: ['Matches', 'Fixtures'],
     }),
   }),
 });

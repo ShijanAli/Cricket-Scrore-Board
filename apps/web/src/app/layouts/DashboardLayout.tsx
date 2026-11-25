@@ -1,4 +1,5 @@
 import { LogOut, Medal, Trophy, Users } from 'lucide-react';
+import { useEffect } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAppDispatch, useCurrentUser } from '@/app/hooks';
 import { CricketBall, Stumps } from '@/components/art/CricketArt';
@@ -18,6 +19,17 @@ const NAV = [
 export function DashboardLayout() {
   const user = useCurrentUser();
   const dispatch = useAppDispatch();
+  // Once the dashboard is up, fetch the other screens in idle time so tapping a tab is instant.
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 800));
+    idle(() => {
+      void import('@/features/matches/MatchesPage');
+      void import('@/features/teams/TeamsPage');
+      void import('@/features/tournaments/EventsPage');
+      void import('@/features/matches/MatchHubPage');
+      void import('@/features/scoring/ScoringPage');
+    });
+  }, []);
   const initial = (user?.name?.trim()[0] ?? '?').toUpperCase();
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

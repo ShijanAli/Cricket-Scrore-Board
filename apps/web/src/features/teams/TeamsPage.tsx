@@ -7,10 +7,11 @@ import { TeamBadge } from '@/components/common/TeamBadge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { paths } from '@/lib/paths';
-import { useGetTeamsQuery } from './teamsApi';
+import { teamsApi, useGetTeamsQuery } from './teamsApi';
 
 export function TeamsPage() {
   const teams = useGetTeamsQuery();
+  const prefetchTeam = teamsApi.usePrefetch('getTeam');
   const newTeam = (
     <Button asChild>
       <Link to={paths.app.newTeam}>
@@ -29,7 +30,7 @@ export function TeamsPage() {
         {(list) => (
           <div className="grid gap-3 sm:grid-cols-2">
             {list.map((t) => (
-              <Link key={t.id} to={paths.app.team(t.id)} className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
+              <Link key={t.id} to={paths.app.team(t.id)} onPointerEnter={() => prefetchTeam(t.id, { ifOlderThan: 30 })} onFocus={() => prefetchTeam(t.id, { ifOlderThan: 30 })} className="rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
                 <Card className="py-4 transition-shadow hover:shadow-md">
                   <CardContent className="flex items-center gap-3">
                     <TeamBadge shortName={t.shortName} color={t.color} />

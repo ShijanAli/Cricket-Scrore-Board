@@ -1,7 +1,7 @@
 import { PlayerAvatar } from '@/components/art/CricketArt';
 import { useState } from 'react';
 import { PLAYER_ROLES, type PlayerRole } from '@cricket/shared';
-import { Trash2 } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChoiceGroup } from '@/components/common/ChoiceGroup';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorMessage } from '@/lib/errors';
 import { paths } from '@/lib/paths';
-import { useAddSquadPlayerMutation, useDeleteTeamMutation, useGetTeamQuery, useRemoveSquadPlayerMutation } from './teamsApi';
+import { useAddSquadPlayersBulkMutation, useDeleteTeamMutation, useGetTeamQuery, useRemoveSquadPlayerMutation } from './teamsApi';
 
 const ROLE_LABEL: Record<PlayerRole, string> = {
   batter: 'Batter',
@@ -29,24 +29,31 @@ export function TeamDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const team = useGetTeamQuery(id);
-  const [addPlayer, add] = useAddSquadPlayerMutation();
+  const [savePlayers, add] = useAddSquadPlayersBulkMutation();
   const [removePlayer, remove] = useRemoveSquadPlayerMutation();
   const [deleteTeam, del] = useDeleteTeamMutation();
   const [name, setName] = useState('');
   const [role, setRole] = useState<PlayerRole>('batter');
+  const [drafts, setDrafts] = useState<{ name: string; role: PlayerRole }[]>([]);
   const [nameError, setNameError] = useState<string | undefined>();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  // Adding only fills a local list; nothing is sent until "Save squad".
+  const addDraft = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
     if (trimmed.length < 2) return setNameError('Enter at least 2 letters');
     setNameError(undefined);
-    const res = await addPlayer({
+    setDrafts((d) => [...d, { name: trimmed, role }]);
+    setName('');
+  };
+
+  const saveAll = async () => {
+    const res = await savePlayers({
       teamId: id,
-      input: { newPlayer: { name: trimmed, role }, isCaptain: false, isViceCaptain: false, isWicketkeeper: false },
+      input: { players: drafts.map((d) => ({ ...d, isCaptain: false, isViceCaptain: false, isWicketkeeper: false })) },
     });
-    if (!res.error) setName('');
+    if (!res.error) setDrafts([]);
   };
 
   return (
@@ -95,18 +102,46 @@ export function TeamDetailPage() {
                 <CardTitle>Add player</CardTitle>
               </CardHeader>
               <CardContent>
-                <form className="space-y-4" onSubmit={(e) => void submit(e)}>
+                <form className="space-y-4" onSubmit={addDraft}>
                   <div className="space-y-1.5">
                     <Label htmlFor="player-name">Name</Label>
                     <Input id="player-name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!nameError} />
                     {nameError ? <p className="text-xs text-destructive">{nameError}</p> : null}
                   </div>
                   <ChoiceGroup label="Role" options={PLAYER_ROLES.values.map((r) => ({ value: r, label: ROLE_LABEL[r] }))} value={role} onChange={setRole} />
-                  {add.isError ? <ErrorState message={errorMessage(add.error)} /> : null}
-                  <Button type="submit" disabled={add.isLoading}>
-                    {add.isLoading ? 'Adding…' : 'Add to squad'}
+                  <Button type="submit" variant="secondary" disabled={add.isLoading}>
+                    Add to list
                   </Button>
                 </form>
+
+                {drafts.length > 0 ? (
+                  <div className="mt-5 space-y-3">
+                    <p className="text-sm font-medium">To be saved ({drafts.length})</p>
+                    <ul className="space-y-2">
+                      {drafts.map((d, i) => (
+                        <li key={`${d.name}-${i}`} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+                          <span className="min-w-0 truncate">
+                            {d.name} <Badge variant="secondary">{ROLE_LABEL[d.role]}</Badge>
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Remove ${d.name} from list`}
+                            disabled={add.isLoading}
+                            onClick={() => setDrafts((list) => list.filter((_, j) => j !== i))}
+                          >
+                            <X />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                    {add.isError ? <ErrorState message={errorMessage(add.error)} /> : null}
+                    <Button type="button" disabled={add.isLoading} onClick={() => void saveAll()}>
+                      {add.isLoading ? 'Saving…' : `Save squad (${drafts.length})`}
+                    </Button>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
 

@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { createApp } from './app';
 import { env } from './config/env';
-import { prisma } from './db/prisma';
+import { prisma, warmDatabase } from './db/prisma';
 import { logger } from './lib/logger';
 import { LiveGateway } from './modules/live/live.gateway';
 
@@ -12,6 +12,8 @@ async function main() {
   gateway.attach();
 
   httpServer.listen(env.PORT, () => logger.info(`API listening on :${env.PORT}`));
+  // Not awaited: the API accepts requests immediately, the pool just gets warm in the background.
+  void warmDatabase().then(() => logger.info('Database connections warm'), (e) => logger.error('Database warm-up failed', e));
 
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received, shutting down`);

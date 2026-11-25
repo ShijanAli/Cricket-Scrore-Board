@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   addSquadPlayerSchema,
+  addSquadPlayersBulkSchema,
   createPlayerSchema,
   createTeamSchema,
   updateTeamSchema,
@@ -62,6 +63,16 @@ teamsRouter.delete(
   asyncHandler(async (req, res) => {
     await teams.deleteTeam(req.params.id!, uid(req));
     res.status(204).end();
+  }),
+);
+
+teamsRouter.post(
+  '/:id/players/bulk',
+  requireAuth,
+  validate(idParam, 'params'),
+  validate(addSquadPlayersBulkSchema),
+  asyncHandler(async (req, res) => {
+    res.status(201).json({ members: await teams.addManyToSquad(req.params.id!, uid(req), req.body) });
   }),
 );
 

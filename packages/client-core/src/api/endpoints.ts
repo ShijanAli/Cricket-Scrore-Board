@@ -1,5 +1,6 @@
 import type {
   AddSquadPlayerInput,
+  AddSquadPlayersBulkInput,
   CreatePlayerInput,
   CreateSeriesInput,
   CreateSingleMatchInput,
@@ -59,6 +60,8 @@ export function createApi(c: ApiClient) {
       remove: (id: string) => c.delete(`/teams/${id}`),
       addPlayer: (id: string, input: AddSquadPlayerInput) =>
         c.post<{ member: SquadMember }>(`/teams/${id}/players`, input).then((r) => r.member),
+      addPlayersBulk: (id: string, input: AddSquadPlayersBulkInput) =>
+        c.post<{ members: SquadMember[] }>(`/teams/${id}/players/bulk`, input).then((r) => r.members),
       removePlayer: (id: string, playerId: string) => c.delete(`/teams/${id}/players/${playerId}`),
     },
     players: {

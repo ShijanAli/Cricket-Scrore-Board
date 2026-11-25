@@ -1,3 +1,4 @@
+import compression from 'compression';
 import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
@@ -13,6 +14,7 @@ export function createApp(): Express {
   const app = express();
   app.disable('x-powered-by');
   app.use(helmet());
+  app.use(compression());
   app.use(cors({ origin: corsOrigins() }));
   // A batch of 200 events is well under 1 MB.
   app.use(express.json({ limit: '1mb' }));

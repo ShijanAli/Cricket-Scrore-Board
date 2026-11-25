@@ -4,14 +4,18 @@ import { CricketBall } from '@/components/art/CricketArt';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { TeamBadge } from '@/components/common/TeamBadge';
+import { matchesApi } from '@/features/matches/matchesApi';
 import { formatDate } from '@/lib/format';
 import { matchHref, type LinkMode } from '@/lib/paths';
 
 export function MatchCard({ match, mode = 'app' }: { match: MatchSummary; mode?: LinkMode }) {
   const a = match.teamA;
   const b = match.teamB;
+  // Start loading the match the moment the pointer or keyboard reaches the card, so the page is ready by the time it opens.
+  const prefetch = matchesApi.usePrefetch('getMatch');
+  const warm = () => prefetch(match.id, { ifOlderThan: 30 });
   return (
-    <Link to={matchHref(mode, match.id)} className="block rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
+    <Link to={matchHref(mode, match.id)} onPointerEnter={warm} onFocus={warm} className="block rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
       <Card className="group relative gap-3 overflow-hidden pt-0 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-900/10">
         <div className="h-1.5" style={{ backgroundImage: `linear-gradient(90deg, ${a?.color ?? '#10b981'}, ${b?.color ?? '#0ea5e9'})` }} />
         <CricketBall className="pointer-events-none absolute -right-5 -bottom-5 size-20 opacity-[0.07] transition-transform duration-500 group-hover:rotate-90" />

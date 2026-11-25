@@ -103,7 +103,7 @@ export function HomePage() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
-            <div key={f.title} className="group rounded-2xl border border-white bg-white/80 p-5 shadow-md shadow-emerald-900/5 backdrop-blur transition-all hover:-translate-y-1 hover:shadow-xl">
+            <div key={f.title} className="group rounded-2xl border border-white bg-white p-5 shadow-md shadow-emerald-900/5 transition-all hover:-translate-y-1 hover:shadow-xl">
               <div className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg transition-transform group-hover:scale-110 group-hover:-rotate-3 ${f.tile}`}>
                 {f.icon}
               </div>

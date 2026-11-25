@@ -10,6 +10,7 @@ import { fromDateOnly } from '../../lib/dates';
 import { badRequest, conflict, notFound } from '../../lib/errors';
 import { parseRules, toJson } from '../../lib/json';
 import { shortNameOf } from '../../lib/strings';
+import { ttlCache } from '../../lib/ttl-cache';
 import { liveBus } from '../live/live-bus';
 import { assertCanScore, assertTournamentNotPaused } from './access';
 import { afterMatchFinished } from './after-match';
@@ -47,8 +48,18 @@ export async function createSingleMatch(userId: string, input: CreateSingleMatch
 export async function getMatchView(matchId: string) {
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: matchInclude });
   if (!match) throw notFound('Match');
-  return withDateString(match);
+  const view = withDateString(match);
+  matchViewCache.set(matchId, view); // whoever just changed the match leaves the fresh view for the next reader
+  return view;
 }
+
+const matchViewCache = ttlCache<Awaited<ReturnType<typeof getMatchView>>>(2_000);
+
+/** For public reads: at most one database load per match every couple of seconds, however many people ask. */
+export const getMatchViewCached = (matchId: string) => matchViewCache.get(matchId, () => getMatchView(matchId));
+
+/** Call after changing a match without going through getMatchView (e.g. scoring a ball). */
+export const invalidateMatchView = (matchId: string) => matchViewCache.delete(matchId);
 
 export async function listMyMatches(userId: string, q: PaginationQuery) {
   const where = {
@@ -68,7 +79,10 @@ export async function listMyMatches(userId: string, q: PaginationQuery) {
 }
 
 /** Public: everything being played right now. */
-export async function listLiveMatches() {
+const liveCache = ttlCache<Awaited<ReturnType<typeof loadLiveMatches>>>(3_000);
+export const listLiveMatches = () => liveCache.get('live', loadLiveMatches);
+
+async function loadLiveMatches() {
   const items = await prisma.match.findMany({
     where: { status: { in: ['live', 'innings_break'] } },
     orderBy: { updatedAt: 'desc' },

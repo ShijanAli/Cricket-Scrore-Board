@@ -10,7 +10,7 @@ import { liveBus } from '../live/live-bus';
 import { assertCanScore, assertTournamentNotPaused } from './access';
 import { afterMatchFinished } from './after-match';
 import { planIngest } from './ingest';
-import { getMatchView } from './matches.service';
+import { getMatchView, invalidateMatchView } from './matches.service';
 import { deriveProgress } from './progress';
 
 const FINISHED = ['completed', 'abandoned', 'no_result', 'walkover'] as const;
@@ -26,7 +26,15 @@ const staleBefore = () => new Date(Date.now() - env.SCORER_LOCK_TTL_SECONDS * 10
  * Atomic compare-and-set: succeeds when nobody holds the lock, we hold it, or the holder went
  * silent. Two scorers tapping at the same moment cannot both win.
  */
-async function acquireLock(match: { id: string; activeScorerId: string | null }, userId: string) {
+async function acquireLock(
+  match: { id: string; activeScorerId: string | null; scorerLockedAt?: Date | null },
+  userId: string,
+) {
+  // Already ours and refreshed recently: nothing to write. Refresh only once a third of the TTL has passed,
+  // which saves a database round trip on almost every ball and still keeps the lock alive.
+  if (match.activeScorerId === userId && match.scorerLockedAt && Date.now() - match.scorerLockedAt.getTime() < (env.SCORER_LOCK_TTL_SECONDS * 1000) / 3) {
+    return;
+  }
   const res = await prisma.match.updateMany({
     where: {
       id: match.id,
@@ -154,7 +162,6 @@ export async function ingestEvents(
   input: IngestEventsInput,
 ): Promise<IngestResult> {
   const match = await assertCanScore(matchId, userId);
-  await assertTournamentNotPaused(match.tournamentId);
   if (isFinished(match.status) && match.status !== 'completed') {
     throw conflict('The match is already finished', 'MATCH_FINISHED');
   }
@@ -168,7 +175,13 @@ export async function ingestEvents(
     throw badRequest('Every event id must be a UUID', 'INVALID_EVENT_ID');
   }
 
-  await acquireLock(match, userId);
+  // Independent checks and reads run together instead of one after another.
+  const [, , players, firstInningsRow] = await Promise.all([
+    assertTournamentNotPaused(match.tournamentId),
+    acquireLock(match, userId),
+    prisma.matchPlayer.findMany({ where: { matchId } }), // the XI is fixed once the match starts
+    input.inningsNo === 2 ? prisma.innings.findUnique({ where: { matchId_inningsNo: { matchId, inningsNo: 1 } } }) : Promise.resolve(null),
+  ]);
 
   const result = await prisma.$transaction(
     async (tx) => {
@@ -184,7 +197,6 @@ export async function ingestEvents(
       const existing = rows.map((r) => parseEvent(r.payload));
       const lastSeq = rows.length ? rows[rows.length - 1]!.seq : 0;
 
-      const players = await tx.matchPlayer.findMany({ where: { matchId } });
       const xi = (teamId: string) => new Set(players.filter((p) => p.teamId === teamId).map((p) => p.playerId));
 
       const plan = planIngest({
@@ -245,10 +257,7 @@ export async function ingestEvents(
       let first: InningsState | null = state;
       let second: InningsState | null = null;
       if (input.inningsNo === 2) {
-        const firstRow = await tx.innings.findUnique({
-          where: { matchId_inningsNo: { matchId, inningsNo: 1 } },
-        });
-        first = firstRow ? asInnings(firstRow.snapshot) : null;
+        first = firstInningsRow ? asInnings(firstInningsRow.snapshot) : null;
         second = state;
       }
       const progress = deriveProgress(first, second);
@@ -291,6 +300,7 @@ export async function ingestEvents(
 
   // Realtime goes out only after the commit, so viewers never see data that was rolled back.
   if (result.accepted > 0) {
+    invalidateMatchView(matchId);
     liveBus.scoreUpdated({
       matchId,
       inningsNo: input.inningsNo,

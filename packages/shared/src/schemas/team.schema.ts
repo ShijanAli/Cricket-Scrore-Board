@@ -37,3 +37,18 @@ export const addSquadPlayerSchema = z.object({
   path: ['playerId'],
 });
 export type AddSquadPlayerInput = z.infer<typeof addSquadPlayerSchema>;
+
+/** Create several guest players and add them all to a squad in one request. */
+export const addSquadPlayersBulkSchema = z.object({
+  players: z
+    .array(
+      createPlayerSchema.extend({
+        isCaptain: z.boolean().default(false),
+        isViceCaptain: z.boolean().default(false),
+        isWicketkeeper: z.boolean().default(false),
+      }),
+    )
+    .min(1)
+    .max(25),
+});
+export type AddSquadPlayersBulkInput = z.infer<typeof addSquadPlayersBulkSchema>;
